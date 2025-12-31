@@ -1,0 +1,99 @@
+---
+title: Basic Props
+description: 'Standard props that are always included'
+---
+
+# Basic Props
+
+Basic props are the foundation of Inertia Server. They're always included in the page response.
+
+## Definition
+
+```typescript
+import { createInertia, prop } from 'inertia-server';
+
+const { definePage } = createInertia({ version: '1.0.0', render: renderToHtml });
+
+const userPage = definePage({
+  component: 'User',
+  props: {
+    name: prop<string>(),
+    email: prop<string>(),
+    role: prop<'admin' | 'user'>(),
+  },
+});
+```
+
+## Usage
+
+```typescript
+app.get('/user/:id', ({ inertia, params }) => {
+  const user = await getUser(params.id);
+  
+  return inertia.render(userPage({
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  }));
+});
+```
+
+## Type Safety
+
+Props are fully typed. TypeScript will error if you:
+
+- Miss a required prop
+- Pass the wrong type
+- Access undefined props on the client
+
+```typescript
+// ❌ TypeScript error: Missing 'email'
+inertia.render(userPage({
+  name: 'John',
+}));
+
+// ❌ TypeScript error: Type 'number' is not assignable to 'string'
+inertia.render(userPage({
+  name: 123,
+  email: 'john@example.com',
+}));
+```
+
+## Nullable Props
+
+For optional data, use union types:
+
+```typescript
+const profilePage = definePage({
+  component: 'Profile',
+  props: {
+    user: prop<User>(),
+    bio: prop<string | null>(),
+  },
+});
+```
+
+## Complex Types
+
+```typescript
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  author: {
+    name: string;
+    avatar: string;
+  };
+}
+
+const blogPage = definePage({
+  component: 'Blog',
+  props: {
+    posts: prop<Post[]>(),
+    pagination: prop<{
+      currentPage: number;
+      totalPages: number;
+    }>(),
+  },
+});
+```

@@ -1,0 +1,83 @@
+---
+title: Introduction
+description: 'Server-side Inertia.js adapter for modern JavaScript runtimes'
+---
+
+# Inertia JavaScript Server Adapter
+
+[Inertia](https://inertiajs.com/) is a framework-agnostic way to create single-page applications without much of the complexity of modern SPAs. 
+It allows you to build modern single-page React, Vue, and Svelte applications using classic server-side routing and controllers.
+
+You can integrate it with any Javascript runtime and server with this package.
+
+## Why Inertia Server?
+
+- **Framework agnostic** - Works with any modern JavaScript server and runtime
+- **Fully typed** - Communicate between server and client with full type safety
+- **Feature complete** - Supports all Inertia.js v2 features (besides the official Laravel features like precognition)
+
+## Example
+
+```typescript
+import { createInertia, prop } from 'inertia-server';
+
+// Create Inertia instance
+const { definePage, createHelper } = createInertia({
+  version: '1.0.0',
+  render: (page) => renderToString(<Root page={page} />),
+});
+
+// Define your page - pages/home.ts 
+const homePage = definePage({
+  component: 'Home',
+  props: {
+    title: prop<string>(),
+    user: prop<User>().once(),
+    stats: prop<Stats>().deferred(),
+  },
+});
+
+// Your server.ts
+import { homePage } from './pages/home';
+
+app.get('/', ({ request }) => {
+  // Inline example, you can use adapters and create
+  // global helpers for your framework of choice
+  const inertia = createHelper({ 
+    request
+  });
+
+  return inertia.render(homePage({
+    title: 'Welcome',
+    user: getCurrentUser(),
+    stats: () => fetchStats(),
+  }));
+});
+
+// Your react page
+import { PageProps } from 'inertia-server';
+import type { homePage } from './pages/home';
+
+export function Page({ title, user, stats }: PageProps<typeof homePage>) {
+  return (
+    <div>
+      <h1>{title}</h1>
+      <p>{user.name}</p>
+      {/* No <Deffered> from @inertiajs/react needed, everything is typed! */}
+      {stats ? <p>{stats}</p> : <p>Loading stats...</p>}
+    </div>
+  );
+}
+
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running in 5 minutes
+  </Card>
+  <Card title="Installation" icon="download" href="/installation">
+    Detailed installation instructions
+  </Card>
+</CardGroup>

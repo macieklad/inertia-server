@@ -1,0 +1,12 @@
+{
+  "name": "docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "mint dev",
+    "build": "echo 'Mintlify builds are handled by their platform'"
+  },
+  "dependencies": {
+    "mint": "^4.2.255"
+  }
+}

@@ -1,0 +1,132 @@
+---
+title: Builders
+description: 'API reference for definePage and prop builders'
+---
+
+# Builders
+
+Inertia Server provides builder functions for defining pages and props.
+
+## definePage
+
+Creates a page definition with typed props. This function is returned from `createInertia()`.
+
+```typescript
+function definePage<S extends PagePropsSchema>(options: {
+  component: string;
+  props: S;
+}): PageDefinition<S>
+```
+
+### Example
+
+```typescript
+import { createInertia, prop } from 'inertia-server';
+
+const { definePage } = createInertia({ version: '1.0.0', render: renderToHtml });
+
+const homePage = definePage({
+  component: 'Home',
+  props: {
+    title: prop<string>(),
+    count: prop<number>(),
+  },
+});
+```
+
+## prop
+
+Creates a standard prop definition.
+
+```typescript
+function prop<T>(): PropBuilder<T>
+```
+
+### Modifiers
+
+| Modifier | Description |
+|----------|-------------|
+| `.deferred(group?)` | Load after initial render |
+| `.once(options?)` | Cache on client |
+| `.optional()` | Only send when requested |
+| `.always()` | Include in partial reloads |
+
+### Examples
+
+```typescript
+// Standard prop
+title: prop<string>()
+
+// Deferred prop
+stats: prop<Stats>().deferred()
+
+// Deferred with group
+chart1: prop<ChartData>().deferred('charts')
+
+// Once prop
+config: prop<Config>().once()
+
+// Once with expiration
+plans: prop<Plan[]>().once({ expiresAt: Date.now() + 300000 })
+
+// Optional prop
+heavyData: prop<Data>().optional()
+
+// Always prop
+user: prop<User>().always()
+
+// Chained
+data: prop<Data>().optional().deferred()
+```
+
+## mergedProp
+
+Creates a prop that merges with existing data.
+
+```typescript
+function mergedProp<T>(): MergedPropBuilder<T>
+```
+
+### Modifiers
+
+| Modifier | Description |
+|----------|-------------|
+| `.scroll()` | Append to end (infinite scroll) |
+| `.prepend()` | Add to beginning |
+
+### Examples
+
+```typescript
+// Basic merged prop
+posts: mergedProp<Post[]>()
+
+// Append (infinite scroll)
+posts: mergedProp<Post[]>().scroll()
+
+// Prepend (new items first)
+notifications: mergedProp<Notification[]>().prepend()
+```
+
+## deepMergedProp
+
+Creates a prop that deep merges nested structures.
+
+```typescript
+function deepMergedProp<T>(): DeepMergedPropBuilder<T>
+```
+
+### Example
+
+```typescript
+interface Conversation {
+  id: number;
+  messages: Message[];
+}
+
+const chatPage = definePage({
+  component: 'Chat',
+  props: {
+    conversations: deepMergedProp<Conversation[]>(),
+  },
+});
+```

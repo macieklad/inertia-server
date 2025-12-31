@@ -1,0 +1,141 @@
+---
+title: Installation
+description: 'Detailed installation and setup instructions'
+---
+
+# Installation
+
+## Package Installation
+
+Install the core package:
+
+```bash
+# Using bun
+bun add inertia-server
+
+# Using npm
+npm install inertia-server
+
+# Using pnpm
+pnpm add inertia-server
+```
+
+## Adapter Installation
+
+### Elysia
+
+```bash
+bun add elysia
+```
+
+```typescript
+import { Elysia } from 'elysia';
+import { createInertia } from 'inertia-server';
+import { elysiaAdapter } from 'inertia-server/elysia';
+
+const inertia = createInertia({
+  render: (page) => renderToString(<Root page={page} />),
+});
+
+new Elysia()
+  .use(elysiaAdapter(inertia))
+  .get('/', ({ inertia }) => {
+    return inertia.render(homePage({ title: 'Hello' }));
+  });
+```
+
+## Client Setup
+
+### React
+
+```bash
+bun add react react-dom @inertiajs/react
+bun add -d @types/react @types/react-dom
+```
+
+### Vue
+
+```bash
+bun add vue @inertiajs/vue3
+```
+
+### Svelte
+
+```bash
+bun add svelte @inertiajs/svelte
+```
+
+## Vite Configuration
+
+Create `vite.config.ts`:
+
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tsconfigPaths from 'vite-tsconfig-paths';
+
+export default defineConfig({
+  base: '/assets/',
+  root: 'src/ui',
+  build: {
+    outDir: '../../dist/client',
+    manifest: true,
+    emptyOutDir: true,
+  },
+  plugins: [
+    react(),
+    tsconfigPaths(),
+  ],
+});
+```
+
+## Production Build
+
+### Build Command
+
+```bash
+# Build client assets
+vite build
+
+# Build server (optional, for bundled deployment)
+bun build src/server.ts --outdir dist --target bun
+```
+
+### Production Server
+
+```typescript
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+// Load manifest in production
+let manifest: Record<string, any> | undefined;
+if (IS_PROD) {
+  manifest = await import('./dist/client/.vite/manifest.json');
+}
+
+// Serve static assets
+if (IS_PROD) {
+  app.use(staticPlugin({ assets: 'dist/client', prefix: '/assets' }));
+}
+```
+
+## TypeScript Configuration
+
+Add to your `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "types": ["bun-types"]
+  }
+}
+```
+
+## Next Steps
+
+- Define your [pages](/pages)
+- Learn about [props](/props)
+- Set up [form handling](/responses)

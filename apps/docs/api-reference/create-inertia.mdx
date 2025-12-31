@@ -1,0 +1,65 @@
+---
+title: createInertia
+description: 'API reference for createInertia function'
+---
+
+# createInertia
+
+Creates an Inertia instance configured for your application.
+
+## Signature
+
+```typescript
+function createInertia(options: InertiaOptions): InertiaInstance
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `render` | `(page: InertiaPage) => string` | Yes | Function to render the HTML response |
+| `version` | `string \| (() => string)` | No | Asset version for cache busting |
+
+## Example
+
+```typescript
+import { createInertia } from 'inertia-server';
+import { renderToString } from 'react-dom/server';
+import Root from './ui/index';
+
+const inertia = createInertia({
+  render: (page) => renderToString(<Root page={page} />),
+  version: '1.0.0',
+});
+```
+
+## Dynamic Version
+
+```typescript
+const inertia = createInertia({
+  render: (page) => renderToString(<Root page={page} />),
+  version: () => {
+    // Read from manifest or environment
+    return process.env.APP_VERSION || Date.now().toString();
+  },
+});
+```
+
+## Return Value
+
+Returns an `InertiaInstance` to be used with an adapter:
+
+```typescript
+interface InertiaInstance {
+  // Internal properties used by adapters
+}
+```
+
+## Usage with Adapter
+
+```typescript
+import { elysiaAdapter } from 'inertia-server/elysia';
+
+const app = new Elysia()
+  .use(elysiaAdapter(inertia));
+```
