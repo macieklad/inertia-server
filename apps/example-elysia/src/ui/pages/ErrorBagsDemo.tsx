@@ -1,23 +1,22 @@
 import { useForm } from "@inertiajs/react";
 import { Layout } from "../components/Layout";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { cn } from "../lib/utils";
+import { PageProps } from "inertia-server";
+import type { errorBagsPage } from "@/inertia";
 
-interface Props {
-	title: string;
-	errors: {
-		login?: { email?: string; password?: string };
-		createUser?: { name?: string; email?: string; password?: string };
-	};
-}
-
-export default function ErrorBagsDemo({ title, errors }: Props) {
+export default function ErrorBagsDemo({ title, errors }: PageProps<typeof errorBagsPage>) {
 	return (
 		<Layout title={title}>
-			<p style={{ marginBottom: "2rem", color: "#666" }}>
+			<p className="mb-8 text-muted-foreground">
 				This page demonstrates error bags. Each form has its own error bag, 
 				so validation errors from one form don't affect the other.
 			</p>
 
-			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+			<div className="grid gap-6 lg:grid-cols-2">
 				<LoginForm errors={errors.login} />
 				<CreateUserForm errors={errors.createUser} />
 			</div>
@@ -37,66 +36,46 @@ function LoginForm({ errors }: { errors?: { email?: string; password?: string } 
 	};
 
 	return (
-		<div style={{ padding: "1.5rem", background: "#f8f9fa", borderRadius: "8px" }}>
-			<h3 style={{ margin: "0 0 1rem" }}>Login Form (error bag: login)</h3>
-			<form onSubmit={handleSubmit}>
-				<div style={{ marginBottom: "1rem" }}>
-					<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-						Email
-					</label>
-					<input
-						type="email"
-						value={data.email}
-						onChange={(e) => setData("email", e.target.value)}
-						style={{
-							width: "100%",
-							padding: "0.5rem",
-							border: errors?.email ? "1px solid #dc3545" : "1px solid #ced4da",
-							borderRadius: "4px",
-						}}
-					/>
-					{errors?.email && (
-						<span style={{ color: "#dc3545", fontSize: "0.875rem" }}>{errors.email}</span>
-					)}
-				</div>
+		<Card>
+			<CardHeader>
+				<CardTitle className="text-base">Login Form (error bag: login)</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<form onSubmit={handleSubmit} className="space-y-4">
+					<div className="space-y-2">
+						<Label htmlFor="login-email">Email</Label>
+						<Input
+							id="login-email"
+							type="email"
+							value={data.email}
+							onChange={(e) => setData("email", e.target.value)}
+							className={cn(errors?.email && "border-destructive")}
+						/>
+						{errors?.email && (
+							<p className="text-sm text-destructive">{errors.email}</p>
+						)}
+					</div>
 
-				<div style={{ marginBottom: "1rem" }}>
-					<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-						Password
-					</label>
-					<input
-						type="password"
-						value={data.password}
-						onChange={(e) => setData("password", e.target.value)}
-						style={{
-							width: "100%",
-							padding: "0.5rem",
-							border: errors?.password ? "1px solid #dc3545" : "1px solid #ced4da",
-							borderRadius: "4px",
-						}}
-					/>
-					{errors?.password && (
-						<span style={{ color: "#dc3545", fontSize: "0.875rem" }}>{errors.password}</span>
-					)}
-				</div>
+					<div className="space-y-2">
+						<Label htmlFor="login-password">Password</Label>
+						<Input
+							id="login-password"
+							type="password"
+							value={data.password}
+							onChange={(e) => setData("password", e.target.value)}
+							className={cn(errors?.password && "border-destructive")}
+						/>
+						{errors?.password && (
+							<p className="text-sm text-destructive">{errors.password}</p>
+						)}
+					</div>
 
-				<button
-					type="submit"
-					disabled={processing}
-					style={{
-						background: "#007bff",
-						color: "#fff",
-						padding: "0.75rem 1.5rem",
-						border: "none",
-						borderRadius: "4px",
-						cursor: processing ? "not-allowed" : "pointer",
-						opacity: processing ? 0.7 : 1,
-					}}
-				>
-					{processing ? "Logging in..." : "Login"}
-				</button>
-			</form>
-		</div>
+					<Button type="submit" disabled={processing}>
+						{processing ? "Logging in..." : "Login"}
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -113,85 +92,59 @@ function CreateUserForm({ errors }: { errors?: { name?: string; email?: string; 
 	};
 
 	return (
-		<div style={{ padding: "1.5rem", background: "#e9ecef", borderRadius: "8px" }}>
-			<h3 style={{ margin: "0 0 1rem" }}>Create User Form (error bag: createUser)</h3>
-			<form onSubmit={handleSubmit}>
-				<div style={{ marginBottom: "1rem" }}>
-					<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-						Name
-					</label>
-					<input
-						type="text"
-						value={data.name}
-						onChange={(e) => setData("name", e.target.value)}
-						style={{
-							width: "100%",
-							padding: "0.5rem",
-							border: errors?.name ? "1px solid #dc3545" : "1px solid #ced4da",
-							borderRadius: "4px",
-						}}
-					/>
-					{errors?.name && (
-						<span style={{ color: "#dc3545", fontSize: "0.875rem" }}>{errors.name}</span>
-					)}
-				</div>
+		<Card className="bg-muted/30">
+			<CardHeader>
+				<CardTitle className="text-base">Create User Form (error bag: createUser)</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<form onSubmit={handleSubmit} className="space-y-4">
+					<div className="space-y-2">
+						<Label htmlFor="create-name">Name</Label>
+						<Input
+							id="create-name"
+							type="text"
+							value={data.name}
+							onChange={(e) => setData("name", e.target.value)}
+							className={cn(errors?.name && "border-destructive")}
+						/>
+						{errors?.name && (
+							<p className="text-sm text-destructive">{errors.name}</p>
+						)}
+					</div>
 
-				<div style={{ marginBottom: "1rem" }}>
-					<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-						Email
-					</label>
-					<input
-						type="email"
-						value={data.email}
-						onChange={(e) => setData("email", e.target.value)}
-						style={{
-							width: "100%",
-							padding: "0.5rem",
-							border: errors?.email ? "1px solid #dc3545" : "1px solid #ced4da",
-							borderRadius: "4px",
-						}}
-					/>
-					{errors?.email && (
-						<span style={{ color: "#dc3545", fontSize: "0.875rem" }}>{errors.email}</span>
-					)}
-				</div>
+					<div className="space-y-2">
+						<Label htmlFor="create-email">Email</Label>
+						<Input
+							id="create-email"
+							type="email"
+							value={data.email}
+							onChange={(e) => setData("email", e.target.value)}
+							className={cn(errors?.email && "border-destructive")}
+						/>
+						{errors?.email && (
+							<p className="text-sm text-destructive">{errors.email}</p>
+						)}
+					</div>
 
-				<div style={{ marginBottom: "1rem" }}>
-					<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-						Password
-					</label>
-					<input
-						type="password"
-						value={data.password}
-						onChange={(e) => setData("password", e.target.value)}
-						style={{
-							width: "100%",
-							padding: "0.5rem",
-							border: errors?.password ? "1px solid #dc3545" : "1px solid #ced4da",
-							borderRadius: "4px",
-						}}
-					/>
-					{errors?.password && (
-						<span style={{ color: "#dc3545", fontSize: "0.875rem" }}>{errors.password}</span>
-					)}
-				</div>
+					<div className="space-y-2">
+						<Label htmlFor="create-password">Password</Label>
+						<Input
+							id="create-password"
+							type="password"
+							value={data.password}
+							onChange={(e) => setData("password", e.target.value)}
+							className={cn(errors?.password && "border-destructive")}
+						/>
+						{errors?.password && (
+							<p className="text-sm text-destructive">{errors.password}</p>
+						)}
+					</div>
 
-				<button
-					type="submit"
-					disabled={processing}
-					style={{
-						background: "#28a745",
-						color: "#fff",
-						padding: "0.75rem 1.5rem",
-						border: "none",
-						borderRadius: "4px",
-						cursor: processing ? "not-allowed" : "pointer",
-						opacity: processing ? 0.7 : 1,
-					}}
-				>
-					{processing ? "Creating..." : "Create User"}
-				</button>
-			</form>
-		</div>
+					<Button type="submit" variant="success" disabled={processing}>
+						{processing ? "Creating..." : "Create User"}
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
 	);
 }

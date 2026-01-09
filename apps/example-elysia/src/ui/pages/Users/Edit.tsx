@@ -1,21 +1,14 @@
 import { useForm, Link } from "@inertiajs/react";
 import { Layout } from "../../components/Layout";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Card, CardContent } from "../../components/ui/card";
+import { cn } from "../../lib/utils";
+import { PageProps } from "inertia-server";
+import type { usersEditPage } from "@/inertia";
 
-interface User {
-	id: number;
-	name: string;
-	email: string;
-	role: string;
-	createdAt: string;
-}
-
-interface Props {
-	title: string;
-	user: User;
-	errors: { name?: string; email?: string };
-}
-
-export default function UsersEdit({ title, user, errors }: Props) {
+export default function UsersEdit({ title, user, errors }: PageProps<typeof usersEditPage>) {
 	const { data, setData, put, processing } = useForm({
 		name: user.name,
 		email: user.email,
@@ -28,81 +21,50 @@ export default function UsersEdit({ title, user, errors }: Props) {
 
 	return (
 		<Layout title={title}>
-			<form onSubmit={handleSubmit} style={{ maxWidth: "500px" }}>
-				<div style={{ marginBottom: "1rem" }}>
-					<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-						Name
-					</label>
-					<input
+			<form onSubmit={handleSubmit} className="max-w-md space-y-4">
+				<div className="space-y-2">
+					<Label htmlFor="name">Name</Label>
+					<Input
+						id="name"
 						type="text"
 						value={data.name}
 						onChange={(e) => setData("name", e.target.value)}
-						style={{
-							width: "100%",
-							padding: "0.5rem",
-							border: errors.name ? "1px solid #dc3545" : "1px solid #ced4da",
-							borderRadius: "4px",
-						}}
+						className={cn(errors.name && "border-destructive")}
 					/>
 					{errors.name && (
-						<span style={{ color: "#dc3545", fontSize: "0.875rem" }}>{errors.name}</span>
+						<p className="text-sm text-destructive">{errors.name}</p>
 					)}
 				</div>
 
-				<div style={{ marginBottom: "1rem" }}>
-					<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-						Email
-					</label>
-					<input
+				<div className="space-y-2">
+					<Label htmlFor="email">Email</Label>
+					<Input
+						id="email"
 						type="email"
 						value={data.email}
 						onChange={(e) => setData("email", e.target.value)}
-						style={{
-							width: "100%",
-							padding: "0.5rem",
-							border: errors.email ? "1px solid #dc3545" : "1px solid #ced4da",
-							borderRadius: "4px",
-						}}
+						className={cn(errors.email && "border-destructive")}
 					/>
 					{errors.email && (
-						<span style={{ color: "#dc3545", fontSize: "0.875rem" }}>{errors.email}</span>
+						<p className="text-sm text-destructive">{errors.email}</p>
 					)}
 				</div>
 
-				<div style={{ marginBottom: "1rem", padding: "1rem", background: "#f8f9fa", borderRadius: "4px" }}>
-					<p style={{ margin: 0, color: "#666", fontSize: "0.875rem" }}>
-						Role: {user.role} | Created: {user.createdAt}
-					</p>
-				</div>
+				<Card className="bg-muted/50">
+					<CardContent className="py-3">
+						<p className="text-sm text-muted-foreground">
+							Role: {user.role} | Created: {user.createdAt}
+						</p>
+					</CardContent>
+				</Card>
 
-				<div style={{ display: "flex", gap: "1rem" }}>
-					<button
-						type="submit"
-						disabled={processing}
-						style={{
-							background: "#007bff",
-							color: "#fff",
-							padding: "0.75rem 1.5rem",
-							border: "none",
-							borderRadius: "4px",
-							cursor: processing ? "not-allowed" : "pointer",
-							opacity: processing ? 0.7 : 1,
-						}}
-					>
+				<div className="flex gap-3">
+					<Button type="submit" disabled={processing}>
 						{processing ? "Saving..." : "Save Changes"}
-					</button>
-					<Link
-						href="/users"
-						style={{
-							padding: "0.75rem 1.5rem",
-							border: "1px solid #ced4da",
-							borderRadius: "4px",
-							textDecoration: "none",
-							color: "#1a1a2e",
-						}}
-					>
-						Cancel
-					</Link>
+					</Button>
+					<Button variant="outline" asChild>
+						<Link href="/users">Cancel</Link>
+					</Button>
 				</div>
 			</form>
 		</Layout>

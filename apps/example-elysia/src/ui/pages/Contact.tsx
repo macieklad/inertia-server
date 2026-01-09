@@ -1,13 +1,15 @@
 import { useForm } from "@inertiajs/react";
 import { Layout } from "../components/Layout";
 import { FlashMessages } from "../components/FlashMessages";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
+import { Label } from "../components/ui/label";
+import { cn } from "../lib/utils";
+import { PageProps } from "inertia-server";
+import type { contactPage } from "@/inertia";
 
-interface Props {
-	title: string;
-	errors: { contact?: { name?: string; email?: string; message?: string } };
-}
-
-export default function Contact({ title, errors }: Props) {
+export default function Contact({ title, errors }: PageProps<typeof contactPage>) {
 	const { data, setData, post, processing } = useForm({
 		name: "",
 		email: "",
@@ -24,88 +26,52 @@ export default function Contact({ title, errors }: Props) {
 	return (
 		<Layout title={title}>
 			<FlashMessages />
-			<form onSubmit={handleSubmit} style={{ maxWidth: "500px" }}>
-				<div style={{ marginBottom: "1rem" }}>
-					<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-						Name
-					</label>
-					<input
+			<form onSubmit={handleSubmit} className="max-w-md space-y-4">
+				<div className="space-y-2">
+					<Label htmlFor="name">Name</Label>
+					<Input
+						id="name"
 						type="text"
 						value={data.name}
 						onChange={(e) => setData("name", e.target.value)}
-						style={{
-							width: "100%",
-							padding: "0.5rem",
-							border: contactErrors.name ? "1px solid #dc3545" : "1px solid #ced4da",
-							borderRadius: "4px",
-						}}
+						className={cn(contactErrors.name && "border-destructive")}
 					/>
 					{contactErrors.name && (
-						<span style={{ color: "#dc3545", fontSize: "0.875rem" }}>
-							{contactErrors.name}
-						</span>
+						<p className="text-sm text-destructive">{contactErrors.name}</p>
 					)}
 				</div>
 
-				<div style={{ marginBottom: "1rem" }}>
-					<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-						Email
-					</label>
-					<input
+				<div className="space-y-2">
+					<Label htmlFor="email">Email</Label>
+					<Input
+						id="email"
 						type="email"
 						value={data.email}
 						onChange={(e) => setData("email", e.target.value)}
-						style={{
-							width: "100%",
-							padding: "0.5rem",
-							border: contactErrors.email ? "1px solid #dc3545" : "1px solid #ced4da",
-							borderRadius: "4px",
-						}}
+						className={cn(contactErrors.email && "border-destructive")}
 					/>
 					{contactErrors.email && (
-						<span style={{ color: "#dc3545", fontSize: "0.875rem" }}>
-							{contactErrors.email}
-						</span>
+						<p className="text-sm text-destructive">{contactErrors.email}</p>
 					)}
 				</div>
 
-				<div style={{ marginBottom: "1rem" }}>
-					<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-						Message
-					</label>
-					<textarea
+				<div className="space-y-2">
+					<Label htmlFor="message">Message</Label>
+					<Textarea
+						id="message"
 						value={data.message}
 						onChange={(e) => setData("message", e.target.value)}
 						rows={5}
-						style={{
-							width: "100%",
-							padding: "0.5rem",
-							border: contactErrors.message ? "1px solid #dc3545" : "1px solid #ced4da",
-							borderRadius: "4px",
-						}}
+						className={cn(contactErrors.message && "border-destructive")}
 					/>
 					{contactErrors.message && (
-						<span style={{ color: "#dc3545", fontSize: "0.875rem" }}>
-							{contactErrors.message}
-						</span>
+						<p className="text-sm text-destructive">{contactErrors.message}</p>
 					)}
 				</div>
 
-				<button
-					type="submit"
-					disabled={processing}
-					style={{
-						background: "#1a1a2e",
-						color: "#fff",
-						padding: "0.75rem 1.5rem",
-						border: "none",
-						borderRadius: "4px",
-						cursor: processing ? "not-allowed" : "pointer",
-						opacity: processing ? 0.7 : 1,
-					}}
-				>
+				<Button type="submit" disabled={processing}>
 					{processing ? "Sending..." : "Send Message"}
-				</button>
+				</Button>
 			</form>
 		</Layout>
 	);

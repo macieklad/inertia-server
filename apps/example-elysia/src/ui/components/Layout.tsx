@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import type { ReactNode } from "react";
+import { cn } from "../lib/utils";
 
 interface LayoutProps {
 	children: ReactNode;
@@ -8,20 +9,15 @@ interface LayoutProps {
 
 export function Layout({ children, title }: LayoutProps) {
 	return (
-		<div style={{ fontFamily: "system-ui, sans-serif", minHeight: "100vh" }}>
-			<nav
-				style={{
-					background: "#1a1a2e",
-					padding: "1rem 2rem",
-					display: "flex",
-					gap: "1.5rem",
-					alignItems: "center",
-				}}
-			>
-				<Link href="/" style={{ color: "#fff", fontWeight: "bold", fontSize: "1.25rem", textDecoration: "none" }}>
+		<div className="min-h-screen bg-background">
+			<nav className="flex items-center gap-6 bg-primary px-6 py-3">
+				<Link
+					href="/"
+					className="text-lg font-bold text-primary-foreground no-underline"
+				>
 					Inertia Server
 				</Link>
-				<div style={{ display: "flex", gap: "1rem" }}>
+				<div className="flex flex-wrap gap-4">
 					<NavLink href="/">Home</NavLink>
 					<NavLink href="/about">About</NavLink>
 					<NavLink href="/contact">Contact</NavLink>
@@ -37,8 +33,8 @@ export function Layout({ children, title }: LayoutProps) {
 					<NavLink href="/error-bags">Error Bags</NavLink>
 				</div>
 			</nav>
-			<main style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
-				{title && <h1 style={{ marginBottom: "1.5rem" }}>{title}</h1>}
+			<main className="mx-auto max-w-5xl p-6">
+				{title && <h1 className="mb-6 text-2xl font-bold">{title}</h1>}
 				{children}
 			</main>
 		</div>
@@ -49,11 +45,7 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
 	return (
 		<Link
 			href={href}
-			style={{
-				color: "#a0a0c0",
-				textDecoration: "none",
-				fontSize: "0.875rem",
-			}}
+			className="text-sm text-primary-foreground/70 no-underline transition-colors hover:text-primary-foreground"
 		>
 			{children}
 		</Link>

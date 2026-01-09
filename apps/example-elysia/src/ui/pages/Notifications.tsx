@@ -1,77 +1,63 @@
 import { router } from "@inertiajs/react";
 import { Layout } from "../components/Layout";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Card, CardContent } from "../components/ui/card";
+import { cn } from "../lib/utils";
+import { PageProps } from "inertia-server";
+import type { notificationsPage } from "@/inertia";
 
-interface Notification {
-	id: number;
-	message: string;
-	type: "info" | "success" | "warning" | "error";
-	createdAt: string;
-}
+const typeVariants = {
+	info: "info",
+	success: "success",
+	warning: "warning",
+	error: "destructive",
+} as const;
 
-interface Props {
-	title: string;
-	notifications: Notification[];
-}
+const typeBorderClasses = {
+	info: "border-l-info",
+	success: "border-l-success",
+	warning: "border-l-warning",
+	error: "border-l-destructive",
+} as const;
 
-const typeColors = {
-	info: { bg: "#d1ecf1", border: "#bee5eb", text: "#0c5460" },
-	success: { bg: "#d4edda", border: "#c3e6cb", text: "#155724" },
-	warning: { bg: "#fff3cd", border: "#ffeeba", text: "#856404" },
-	error: { bg: "#f8d7da", border: "#f5c6cb", text: "#721c24" },
-};
-
-export default function Notifications({ title, notifications }: Props) {
+export default function Notifications({ title, notifications }: PageProps<typeof notificationsPage>) {
 	const addNotification = () => {
 		router.post("/notifications");
 	};
 
 	return (
 		<Layout title={title}>
-			<p style={{ marginBottom: "1.5rem", color: "#666" }}>
+			<p className="mb-6 text-muted-foreground">
 				New notifications are prepended to the list using merged props with prepend direction.
 			</p>
 
-			<button
-				onClick={addNotification}
-				style={{
-					background: "#28a745",
-					color: "#fff",
-					padding: "0.75rem 1.5rem",
-					border: "none",
-					borderRadius: "4px",
-					cursor: "pointer",
-					marginBottom: "1.5rem",
-				}}
-			>
+			<Button variant="success" onClick={addNotification} className="mb-6">
 				Add Random Notification
-			</button>
+			</Button>
 
-			<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-				{notifications.map((notification) => {
-					const colors = typeColors[notification.type];
-					return (
-						<div
-							key={notification.id}
-							style={{
-								padding: "1rem",
-								background: colors.bg,
-								border: `1px solid ${colors.border}`,
-								borderRadius: "4px",
-								color: colors.text,
-							}}
-						>
-							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-								<span>{notification.message}</span>
-								<span style={{ fontSize: "0.75rem", opacity: 0.7 }}>
-									{new Date(notification.createdAt).toLocaleTimeString()}
-								</span>
+			<div className="flex flex-col gap-3">
+				{notifications.map((notification) => (
+					<Card
+						key={notification.id}
+						className={cn("border-l-4", typeBorderClasses[notification.type])}
+					>
+						<CardContent className="flex items-center justify-between py-3">
+							<div className="flex items-center gap-3">
+								<Badge variant={typeVariants[notification.type]}>
+									{notification.type}
+								</Badge>
+								<span className="text-sm">{notification.message}</span>
 							</div>
-						</div>
-					);
-				})}
+							<span className="text-xs text-muted-foreground">
+								{new Date(notification.createdAt).toLocaleTimeString()}
+							</span>
+						</CardContent>
+					</Card>
+				))}
 
 				{notifications.length === 0 && (
-					<p style={{ color: "#666", textAlign: "center", padding: "2rem" }}>
+					<p className="py-8 text-center text-muted-foreground">
 						No notifications yet. Click the button above to add some!
 					</p>
 				)}

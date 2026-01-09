@@ -1,56 +1,54 @@
 import { router } from "@inertiajs/react";
 import { Layout } from "../components/Layout";
+import { Button } from "../components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { PageProps } from "inertia-server";
+import type { alwaysPage } from "@/inertia";
 
-interface Props {
-	title: string;
-	regularData: string;
-	authData: { isAuthenticated: boolean; permissions: string[] };
-}
-
-export default function AlwaysPropsDemo({ title, regularData, authData }: Props) {
+export default function AlwaysPropsDemo({ title, regularData, authData }: PageProps<typeof alwaysPage>) {
 	const reloadRegularOnly = () => {
 		router.reload({ only: ["regularData"] });
 	};
 
 	return (
 		<Layout title={title}>
-			<p style={{ marginBottom: "2rem", color: "#666" }}>
+			<p className="mb-8 text-muted-foreground">
 				Always props are included even in partial reloads that don't request them. 
 				Try the partial reload button - auth data will still be included.
 			</p>
 
-			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
-				<div style={{ padding: "1.5rem", background: "#f8f9fa", borderRadius: "8px" }}>
-					<h3 style={{ margin: "0 0 0.5rem" }}>Regular Data</h3>
-					<p style={{ margin: 0 }}>{regularData}</p>
-				</div>
+			<div className="mb-6 grid gap-4 sm:grid-cols-2">
+				<Card>
+					<CardHeader className="pb-2">
+						<CardTitle className="text-base">Regular Data</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<p>{regularData}</p>
+					</CardContent>
+				</Card>
 
-				<div style={{ padding: "1.5rem", background: "#d1ecf1", borderRadius: "8px" }}>
-					<h3 style={{ margin: "0 0 0.5rem" }}>Auth Data (Always Prop)</h3>
-					<p style={{ margin: "0 0 0.5rem" }}>
-						<strong>Authenticated:</strong> {authData.isAuthenticated ? "Yes" : "No"}
-					</p>
-					<p style={{ margin: 0 }}>
-						<strong>Permissions:</strong> {authData.permissions.join(", ")}
-					</p>
-				</div>
+				<Card className="border-info/20 bg-info/10">
+					<CardHeader className="pb-2">
+						<CardTitle className="text-base">Auth Data (Always Prop)</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-1 text-sm">
+						<p>
+							<span className="font-medium">Authenticated:</span>{" "}
+							{authData.isAuthenticated ? "Yes" : "No"}
+						</p>
+						<p>
+							<span className="font-medium">Permissions:</span>{" "}
+							{authData.permissions.join(", ")}
+						</p>
+					</CardContent>
+				</Card>
 			</div>
 
-			<button
-				onClick={reloadRegularOnly}
-				style={{
-					background: "#1a1a2e",
-					color: "#fff",
-					padding: "0.75rem 1.5rem",
-					border: "none",
-					borderRadius: "4px",
-					cursor: "pointer",
-				}}
-			>
+			<Button onClick={reloadRegularOnly}>
 				Partial Reload (only regularData)
-			</button>
+			</Button>
 
-			<p style={{ marginTop: "1rem", color: "#666", fontSize: "0.875rem" }}>
+			<p className="mt-4 text-sm text-muted-foreground">
 				Note: Even though we only request "regularData", the authData will still be included 
 				because it's marked as "always".
 			</p>

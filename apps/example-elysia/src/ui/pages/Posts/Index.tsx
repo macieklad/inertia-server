@@ -1,85 +1,62 @@
 import { router } from "@inertiajs/react";
 import { Layout } from "../../components/Layout";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../../components/ui/card";
+import { PageProps } from "inertia-server";
+import type { postsIndexPage } from "@/inertia";
 
-interface Post {
-	id: number;
-	title: string;
-	excerpt: string;
-	author: string;
-	createdAt: string;
-}
+export default function PostsIndex({
+  title,
+  posts,
+  currentPage,
+  totalPages,
+  hasMore,
+}: PageProps<typeof postsIndexPage>) {
+  const loadMore = () => {
+    router.reload({
+      data: { page: currentPage + 1 },
+      only: ["posts", "currentPage", "hasMore"],
+    });
+  };
 
-interface Props {
-	title: string;
-	posts: Post[];
-	currentPage: number;
-	totalPages: number;
-	hasMore: boolean;
-}
+  return (
+    <Layout title={title}>
+      <p className="mb-6 text-muted-foreground">
+        Showing {posts.length} posts (page {currentPage} of {totalPages}). Posts
+        use merged props for infinite scroll behavior.
+      </p>
 
-export default function PostsIndex({ title, posts, currentPage, totalPages, hasMore }: Props) {
-	const loadMore = () => {
-		router.reload({
-			data: { page: currentPage + 1 },
-			only: ["posts", "currentPage", "hasMore"],
-		});
-	};
+      <div className="flex flex-col gap-4">
+        {posts.map((post) => (
+          <Card key={post.id}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">{post.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="pb-2">
+              <p className="text-muted-foreground">{post.excerpt}</p>
+            </CardContent>
+            <CardFooter>
+              <p className="text-sm text-muted-foreground">
+                By {post.author} on {post.createdAt}
+              </p>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
 
-	return (
-		<Layout title={title}>
-			<p style={{ marginBottom: "1.5rem", color: "#666" }}>
-				Showing {posts.length} posts (page {currentPage} of {totalPages}). 
-				Posts use merged props for infinite scroll behavior.
-			</p>
+      {hasMore && (
+        <div className="mt-8 text-center">
+          <Button onClick={loadMore} size="lg">
+            Load More
+          </Button>
+        </div>
+      )}
 
-			<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-				{posts.map((post) => (
-					<article
-						key={post.id}
-						style={{
-							padding: "1.5rem",
-							background: "#fff",
-							border: "1px solid #e9ecef",
-							borderRadius: "8px",
-						}}
-					>
-						<h2 style={{ margin: "0 0 0.5rem", fontSize: "1.25rem" }}>
-							{post.title}
-						</h2>
-						<p style={{ margin: "0 0 0.75rem", color: "#666" }}>
-							{post.excerpt}
-						</p>
-						<footer style={{ fontSize: "0.875rem", color: "#999" }}>
-							By {post.author} on {post.createdAt}
-						</footer>
-					</article>
-				))}
-			</div>
-
-			{hasMore && (
-				<div style={{ textAlign: "center", marginTop: "2rem" }}>
-					<button
-						onClick={loadMore}
-						style={{
-							background: "#1a1a2e",
-							color: "#fff",
-							padding: "0.75rem 2rem",
-							border: "none",
-							borderRadius: "4px",
-							cursor: "pointer",
-							fontSize: "1rem",
-						}}
-					>
-						Load More
-					</button>
-				</div>
-			)}
-
-			{!hasMore && posts.length > 0 && (
-				<p style={{ textAlign: "center", marginTop: "2rem", color: "#666" }}>
-					You've reached the end!
-				</p>
-			)}
-		</Layout>
-	);
+      {!hasMore && posts.length > 0 && (
+        <p className="mt-8 text-center text-muted-foreground">
+          You've reached the end!
+        </p>
+      )}
+    </Layout>
+  );
 }

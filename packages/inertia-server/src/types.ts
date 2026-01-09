@@ -310,14 +310,14 @@ export interface ScrollPropOptions {
  */
 export type PageProps<
   // biome-ignore lint/suspicious/noExplicitAny: Relaxed constraint to allow specific page definitions
-  T extends InertiaPageDefinition<PagePropsSchema, keyof Inertia.Shared | never>
+  T extends InertiaPageDefinition<any, any>
 > = T extends InertiaPageDefinition<infer S, infer RS>
   ? ExtractPropTypes<S> &
       Omit<Inertia.Shared, RS> & {
         [K in RS]: NonNullable<Inertia.Shared[K]>;
       } & {
         flash: Partial<Inertia.Flashable>;
-        errors: Record<string, string>;
+        errors: Partial<Inertia.ErrorBags> & Record<string, string>;
       }
   : never;
 

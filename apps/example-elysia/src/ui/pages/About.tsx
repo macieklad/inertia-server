@@ -1,25 +1,40 @@
 import { Layout } from "../components/Layout";
+import { PageProps } from "inertia-server";
+import type { aboutPage } from "@/inertia";
 
-interface Props {
-	title: string;
-	content: string;
-}
-
-export default function About({ title, content }: Props) {
+export default function About({ title, content }: PageProps<typeof aboutPage>) {
 	return (
 		<Layout title={title}>
-			<p style={{ fontSize: "1.125rem", lineHeight: 1.7, color: "#444" }}>
+			<p className="text-lg leading-relaxed text-muted-foreground">
 				{content}
 			</p>
 
-			<h2 style={{ marginTop: "2rem" }}>Key Features</h2>
-			<ul style={{ lineHeight: 1.8 }}>
-				<li>Server-side routing with client-side rendering</li>
-				<li>Type-safe page definitions with TypeScript</li>
-				<li>Prop builders for deferred, once, optional, and always props</li>
-				<li>Merged props for infinite scroll and real-time updates</li>
-				<li>Form handling with validation and error bags</li>
-				<li>History encryption for sensitive data</li>
+			<h2 className="mb-4 mt-8 text-xl font-semibold">Key Features</h2>
+			<ul className="space-y-2 text-muted-foreground">
+				<li className="flex items-start gap-2">
+					<span className="text-foreground">-</span>
+					Server-side routing with client-side rendering
+				</li>
+				<li className="flex items-start gap-2">
+					<span className="text-foreground">-</span>
+					Type-safe page definitions with TypeScript
+				</li>
+				<li className="flex items-start gap-2">
+					<span className="text-foreground">-</span>
+					Prop builders for deferred, once, optional, and always props
+				</li>
+				<li className="flex items-start gap-2">
+					<span className="text-foreground">-</span>
+					Merged props for infinite scroll and real-time updates
+				</li>
+				<li className="flex items-start gap-2">
+					<span className="text-foreground">-</span>
+					Form handling with validation and error bags
+				</li>
+				<li className="flex items-start gap-2">
+					<span className="text-foreground">-</span>
+					History encryption for sensitive data
+				</li>
 			</ul>
 		</Layout>
 	);

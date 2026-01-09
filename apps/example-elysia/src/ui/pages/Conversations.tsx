@@ -1,27 +1,14 @@
 import { useForm } from "@inertiajs/react";
 import { useState } from "react";
 import { Layout } from "../components/Layout";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { cn } from "../lib/utils";
+import { PageProps } from "inertia-server";
+import type { conversationsPage } from "@/inertia";
 
-interface Message {
-	id: number;
-	text: string;
-	sender: string;
-}
-
-interface Conversation {
-	id: number;
-	title: string;
-	participants: string[];
-	messages: Message[];
-	lastActivity: string;
-}
-
-interface Props {
-	title: string;
-	conversations: Conversation[];
-}
-
-export default function Conversations({ title, conversations }: Props) {
+export default function Conversations({ title, conversations }: PageProps<typeof conversationsPage>) {
 	const [selectedId, setSelectedId] = useState<number | null>(
 		conversations[0]?.id ?? null,
 	);
@@ -30,68 +17,65 @@ export default function Conversations({ title, conversations }: Props) {
 
 	return (
 		<Layout title={title}>
-			<p style={{ marginBottom: "1.5rem", color: "#666" }}>
+			<p className="mb-6 text-muted-foreground">
 				Messages use deep merge props, allowing nested updates without replacing the entire conversation.
 			</p>
 
-			<div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "1.5rem", height: "500px" }}>
-				<div style={{ background: "#f8f9fa", borderRadius: "8px", overflow: "auto" }}>
+			<div className="grid h-[500px] gap-4 lg:grid-cols-[280px_1fr]">
+				<div className="overflow-auto rounded-sm border bg-muted/30">
 					{conversations.map((conversation) => (
 						<button
 							key={conversation.id}
 							onClick={() => setSelectedId(conversation.id)}
-							style={{
-								width: "100%",
-								padding: "1rem",
-								border: "none",
-								borderBottom: "1px solid #e9ecef",
-								background: selectedId === conversation.id ? "#e9ecef" : "transparent",
-								textAlign: "left",
-								cursor: "pointer",
-							}}
+							className={cn(
+								"w-full border-b border-border p-4 text-left transition-colors hover:bg-muted/50",
+								selectedId === conversation.id && "bg-muted"
+							)}
 						>
-							<div style={{ fontWeight: 500 }}>{conversation.title}</div>
-							<div style={{ fontSize: "0.875rem", color: "#666" }}>
+							<div className="font-medium">{conversation.title}</div>
+							<div className="text-sm text-muted-foreground">
 								{conversation.participants.join(", ")}
 							</div>
-							<div style={{ fontSize: "0.75rem", color: "#999", marginTop: "0.25rem" }}>
+							<div className="mt-1 text-xs text-muted-foreground">
 								{conversation.messages.length} messages
 							</div>
 						</button>
 					))}
 				</div>
 
-				<div style={{ background: "#fff", border: "1px solid #e9ecef", borderRadius: "8px", display: "flex", flexDirection: "column" }}>
+				<Card className="flex flex-col overflow-hidden">
 					{selectedConversation ? (
 						<>
-							<div style={{ padding: "1rem", borderBottom: "1px solid #e9ecef" }}>
-								<h3 style={{ margin: 0 }}>{selectedConversation.title}</h3>
-								<div style={{ fontSize: "0.875rem", color: "#666" }}>
+							<CardHeader className="shrink-0 border-b pb-3">
+								<CardTitle className="text-base">
+									{selectedConversation.title}
+								</CardTitle>
+								<p className="text-sm text-muted-foreground">
 									{selectedConversation.participants.join(", ")}
-								</div>
-							</div>
+								</p>
+							</CardHeader>
 
-							<div style={{ flex: 1, overflow: "auto", padding: "1rem" }}>
+							<CardContent className="flex-1 space-y-4 overflow-auto py-4">
 								{selectedConversation.messages.map((message) => (
-									<div key={message.id} style={{ marginBottom: "1rem" }}>
-										<div style={{ fontWeight: 500, fontSize: "0.875rem" }}>
+									<div key={message.id}>
+										<div className="text-sm font-medium">
 											{message.sender}
 										</div>
-										<div style={{ background: "#f8f9fa", padding: "0.5rem 0.75rem", borderRadius: "8px", marginTop: "0.25rem" }}>
+										<div className="mt-1 rounded-sm bg-muted/50 px-3 py-2 text-sm">
 											{message.text}
 										</div>
 									</div>
 								))}
-							</div>
+							</CardContent>
 
 							<MessageForm conversationId={selectedConversation.id} />
 						</>
 					) : (
-						<div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#666" }}>
+						<div className="flex flex-1 items-center justify-center text-muted-foreground">
 							Select a conversation
 						</div>
 					)}
-				</div>
+				</Card>
 			</div>
 		</Layout>
 	);
@@ -112,33 +96,17 @@ function MessageForm({ conversationId }: { conversationId: number }) {
 	};
 
 	return (
-		<form onSubmit={handleSubmit} style={{ padding: "1rem", borderTop: "1px solid #e9ecef", display: "flex", gap: "0.5rem" }}>
-			<input
+		<form onSubmit={handleSubmit} className="flex shrink-0 gap-2 border-t p-4">
+			<Input
 				type="text"
 				value={data.text}
 				onChange={(e) => setData("text", e.target.value)}
 				placeholder="Type a message..."
-				style={{
-					flex: 1,
-					padding: "0.5rem",
-					border: "1px solid #ced4da",
-					borderRadius: "4px",
-				}}
+				className="flex-1"
 			/>
-			<button
-				type="submit"
-				disabled={processing || !data.text.trim()}
-				style={{
-					background: "#1a1a2e",
-					color: "#fff",
-					padding: "0.5rem 1rem",
-					border: "none",
-					borderRadius: "4px",
-					cursor: processing ? "not-allowed" : "pointer",
-				}}
-			>
+			<Button type="submit" disabled={processing || !data.text.trim()}>
 				Send
-			</button>
+			</Button>
 		</form>
 	);
 }

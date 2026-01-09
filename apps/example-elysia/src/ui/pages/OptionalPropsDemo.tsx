@@ -1,14 +1,12 @@
 import { router } from "@inertiajs/react";
 import { useState } from "react";
 import { Layout } from "../components/Layout";
+import { Button } from "../components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { PageProps } from "inertia-server";
+import type { optionalPage } from "@/inertia";
 
-interface Props {
-	title: string;
-	basicData: string;
-	heavyData?: { items: string[] };
-}
-
-export default function OptionalPropsDemo({ title, basicData, heavyData }: Props) {
+export default function OptionalPropsDemo({ title, basicData, heavyData }: PageProps<typeof optionalPage>) {
 	const [loading, setLoading] = useState(false);
 
 	const loadHeavyData = () => {
@@ -21,58 +19,58 @@ export default function OptionalPropsDemo({ title, basicData, heavyData }: Props
 
 	return (
 		<Layout title={title}>
-			<p style={{ marginBottom: "2rem", color: "#666" }}>
+			<p className="mb-8 text-muted-foreground">
 				Optional props are never included in standard visits. They must be explicitly requested via partial reloads.
 			</p>
 
-			<div style={{ padding: "1.5rem", background: "#d4edda", borderRadius: "8px", marginBottom: "1.5rem" }}>
-				<h3 style={{ margin: "0 0 0.5rem" }}>Basic Data (Always Loaded)</h3>
-				<p style={{ margin: 0 }}>{basicData}</p>
-			</div>
+			<div className="space-y-4">
+				<Card className="border-success/20 bg-success/10">
+					<CardHeader className="pb-2">
+						<CardTitle className="text-base">Basic Data (Always Loaded)</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<p>{basicData}</p>
+					</CardContent>
+				</Card>
 
-			<div style={{ padding: "1.5rem", background: "#f8f9fa", borderRadius: "8px" }}>
-				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-					<h3 style={{ margin: 0 }}>Heavy Data (Optional)</h3>
-					<button
-						onClick={loadHeavyData}
-						disabled={loading || !!heavyData}
-						style={{
-							background: heavyData ? "#6c757d" : "#007bff",
-							color: "#fff",
-							padding: "0.5rem 1rem",
-							border: "none",
-							borderRadius: "4px",
-							cursor: loading || heavyData ? "not-allowed" : "pointer",
-							opacity: loading ? 0.7 : 1,
-						}}
-					>
-						{loading ? "Loading..." : heavyData ? "Loaded" : "Load Heavy Data"}
-					</button>
-				</div>
-
-				{heavyData ? (
-					<div style={{ maxHeight: "300px", overflow: "auto" }}>
-						<p style={{ margin: "0 0 0.5rem", color: "#666" }}>
-							Showing {heavyData.items.length} items:
-						</p>
-						<ul style={{ margin: 0, paddingLeft: "1.25rem", columns: 3 }}>
-							{heavyData.items.slice(0, 30).map((item, i) => (
-								<li key={i} style={{ fontSize: "0.875rem" }}>
-									{item}
-								</li>
-							))}
-						</ul>
-						{heavyData.items.length > 30 && (
-							<p style={{ margin: "0.5rem 0 0", color: "#666", fontSize: "0.875rem" }}>
-								...and {heavyData.items.length - 30} more
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between pb-2">
+						<CardTitle className="text-base">Heavy Data (Optional)</CardTitle>
+						<Button
+							onClick={loadHeavyData}
+							disabled={loading || !!heavyData}
+							variant={heavyData ? "secondary" : "default"}
+							size="sm"
+						>
+							{loading ? "Loading..." : heavyData ? "Loaded" : "Load Heavy Data"}
+						</Button>
+					</CardHeader>
+					<CardContent>
+						{heavyData ? (
+							<div className="max-h-72 overflow-auto">
+								<p className="mb-2 text-sm text-muted-foreground">
+									Showing {heavyData.items.length} items:
+								</p>
+								<ul className="columns-3 gap-4 text-sm">
+									{heavyData.items.slice(0, 30).map((item, i) => (
+										<li key={i} className="text-muted-foreground">
+											{item}
+										</li>
+									))}
+								</ul>
+								{heavyData.items.length > 30 && (
+									<p className="mt-2 text-sm text-muted-foreground">
+										...and {heavyData.items.length - 30} more
+									</p>
+								)}
+							</div>
+						) : (
+							<p className="text-muted-foreground">
+								Click the button above to load this optional data.
 							</p>
 						)}
-					</div>
-				) : (
-					<p style={{ margin: 0, color: "#999" }}>
-						Click the button above to load this optional data.
-					</p>
-				)}
+					</CardContent>
+				</Card>
 			</div>
 		</Layout>
 	);

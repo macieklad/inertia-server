@@ -1,47 +1,55 @@
 import { Deferred } from "@inertiajs/react";
 import { Layout } from "../components/Layout";
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { PageProps } from "inertia-server";
+import type { deferredPage } from "@/inertia";
 
-interface Props {
-	title: string;
-	quickData: string;
-	slowData?: string;
-	sidebarData?: string[];
-}
-
-export default function DeferredDemo({ title, quickData, slowData, sidebarData }: Props) {
+export default function DeferredDemo({ title, quickData, slowData, sidebarData }: PageProps<typeof deferredPage>) {
 	return (
 		<Layout title={title}>
-			<p style={{ marginBottom: "2rem", color: "#666" }}>
+			<p className="mb-8 text-muted-foreground">
 				This page demonstrates deferred props. Some data loads instantly, while heavy data loads in the background.
 			</p>
 
-			<div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "2rem" }}>
-				<div>
-					<div style={{ padding: "1.5rem", background: "#d4edda", borderRadius: "8px", marginBottom: "1rem" }}>
-						<h3 style={{ margin: "0 0 0.5rem" }}>Quick Data (Immediate)</h3>
-						<p style={{ margin: 0 }}>{quickData}</p>
-					</div>
+			<div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+				<div className="space-y-4">
+					<Card className="border-success/20 bg-success/10">
+						<CardHeader className="pb-2">
+							<CardTitle className="text-base">Quick Data (Immediate)</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p>{quickData}</p>
+						</CardContent>
+					</Card>
 
-					<div style={{ padding: "1.5rem", background: "#f8f9fa", borderRadius: "8px" }}>
-						<h3 style={{ margin: "0 0 0.5rem" }}>Slow Data (Deferred)</h3>
-						<Deferred data="slowData" fallback={<LoadingSpinner />}>
-							<p style={{ margin: 0 }}>{slowData}</p>
-						</Deferred>
-					</div>
+					<Card>
+						<CardHeader className="pb-2">
+							<CardTitle className="text-base">Slow Data (Deferred)</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<Deferred data="slowData" fallback={<LoadingSpinner />}>
+								<p>{slowData}</p>
+							</Deferred>
+						</CardContent>
+					</Card>
 				</div>
 
-				<aside style={{ padding: "1.5rem", background: "#e9ecef", borderRadius: "8px" }}>
-					<h3 style={{ margin: "0 0 1rem" }}>Sidebar (Deferred Group)</h3>
-					<Deferred data="sidebarData" fallback={<LoadingSpinner />}>
-						<ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-							{sidebarData?.map((item, i) => (
-								<li key={i} style={{ marginBottom: "0.5rem" }}>
-									{item}
-								</li>
-							))}
-						</ul>
-					</Deferred>
-				</aside>
+				<Card className="bg-muted/50">
+					<CardHeader className="pb-2">
+						<CardTitle className="text-base">Sidebar (Deferred Group)</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<Deferred data="sidebarData" fallback={<LoadingSpinner />}>
+							<ul className="space-y-2 pl-4">
+								{sidebarData?.map((item, i) => (
+									<li key={i} className="text-sm">
+										- {item}
+									</li>
+								))}
+							</ul>
+						</Deferred>
+					</CardContent>
+				</Card>
 			</div>
 		</Layout>
 	);
@@ -49,19 +57,9 @@ export default function DeferredDemo({ title, quickData, slowData, sidebarData }
 
 function LoadingSpinner() {
 	return (
-		<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#666" }}>
-			<div
-				style={{
-					width: "20px",
-					height: "20px",
-					border: "2px solid #ddd",
-					borderTopColor: "#1a1a2e",
-					borderRadius: "50%",
-					animation: "spin 1s linear infinite",
-				}}
-			/>
-			Loading...
-			<style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+		<div className="flex items-center gap-2 text-muted-foreground">
+			<div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
+			<span className="text-sm">Loading...</span>
 		</div>
 	);
 }
