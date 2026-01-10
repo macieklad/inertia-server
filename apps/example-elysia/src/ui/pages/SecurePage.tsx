@@ -1,11 +1,27 @@
-import { router } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
+import { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { CodeBlock } from "../components/CodeBlock";
 import { PageProps } from "inertia-server";
 import type { securePage } from "@/inertia";
 
 export default function SecurePage({ title, sensitiveData }: PageProps<typeof securePage>) {
+	const page = usePage();
+	const [historyLength, setHistoryLength] = useState(0);
+	const [historyState, setHistoryState] = useState<string>("");
+
+	useEffect(() => {
+		setHistoryLength(window.history.length);
+		try {
+			const state = window.history.state;
+			setHistoryState(JSON.stringify(state, null, 2));
+		} catch {
+			setHistoryState("Unable to read history state");
+		}
+	}, []);
+
 	const handleLogout = () => {
 		router.post("/logout");
 	};
@@ -34,6 +50,30 @@ export default function SecurePage({ title, sensitiveData }: PageProps<typeof se
 					</CardContent>
 				</Card>
 
+				<Card>
+					<CardHeader className="pb-2">
+						<CardTitle className="text-base">Browser History State</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-3">
+						<div className="flex items-center gap-4 text-sm">
+							<span className="text-muted-foreground">History length:</span>
+							<code className="rounded-sm bg-muted px-2 py-0.5">{historyLength}</code>
+						</div>
+						<div className="flex items-center gap-4 text-sm">
+							<span className="text-muted-foreground">encryptHistory:</span>
+							<code className="rounded-sm bg-muted px-2 py-0.5">
+								{String((page.props as Record<string, unknown>).encryptHistory ?? page.encryptHistory ?? "undefined")}
+							</code>
+						</div>
+						<div>
+							<p className="mb-2 text-sm text-muted-foreground">History state (encrypted data not visible):</p>
+							<pre className="max-h-48 overflow-auto rounded-sm bg-muted p-3 text-xs">
+								{historyState}
+							</pre>
+						</div>
+					</CardContent>
+				</Card>
+
 				<Card className="border-info/20 bg-info/10">
 					<CardHeader className="pb-2">
 						<CardTitle className="text-base">Clear History on Logout</CardTitle>
@@ -58,6 +98,36 @@ export default function SecurePage({ title, sensitiveData }: PageProps<typeof se
 						<li>- Useful for pages with sensitive user data (account info, financial data, etc.)</li>
 					</ul>
 				</div>
+
+				<CodeBlock
+					tabs={[
+						{
+							label: "Server",
+							language: "typescript",
+							code: `// In route handler
+return inertia.render(
+  securePage({
+    title: "Secure Demo",
+    sensitiveData: "secret-123",
+  }),
+  {
+    encryptHistory: true,
+    clearHistory: true,
+  }
+);`,
+						},
+						{
+							label: "Client",
+							language: "tsx",
+							code: `// Browser history state is encrypted
+// Back/forward navigation works normally
+// But history.state shows encrypted data, not props
+
+// Check history state
+console.log(history.state);  // { __inertia_encrypted: "..." }`,
+						},
+					]}
+				/>
 			</div>
 		</Layout>
 	);

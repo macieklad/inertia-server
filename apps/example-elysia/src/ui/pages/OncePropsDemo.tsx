@@ -1,6 +1,7 @@
 import { Link } from "@inertiajs/react";
 import { Layout } from "../components/Layout";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { CodeBlock } from "../components/CodeBlock";
 import { PageProps } from "inertia-server";
 import type { oncePage } from "@/inertia";
 
@@ -66,6 +67,34 @@ export default function OncePropsDemo({ title, timestamp, config, plans }: PageP
 			<p className="mt-8 text-sm text-muted-foreground">
 				Try navigating to <Link href="/about" className="underline hover:text-foreground">About</Link> and back to see how once props behave.
 			</p>
+
+			<CodeBlock
+				tabs={[
+					{
+						label: "Server",
+						language: "typescript",
+						code: `export const oncePage = definePage({
+  component: "OncePropsDemo",
+  props: {
+    title: prop<string>(),
+    timestamp: prop<number>(),
+    config: prop<{ theme: string; locale: string }>().once(),
+    plans: prop<{ id: number; name: string; price: number }[]>().once({
+      expiresAt: Date.now() + 60000,
+    }),
+  },
+});`,
+					},
+					{
+						label: "Client",
+						language: "tsx",
+						code: `// Props received normally, caching handled by server
+// On first visit: server sends config + plans
+// On subsequent visits: cached values reused
+<p>Config: {config.theme} / {config.locale}</p>`,
+					},
+				]}
+			/>
 		</Layout>
 	);
 }

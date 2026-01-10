@@ -1,0 +1,175 @@
+---
+title: Pages
+description: 'Guide to your Inertia data model'
+---
+
+When building applications using Inertia, each page in your application typically has its own controller / route and a corresponding JavaScript component. 
+This allows you to retrieve just the data necessary for that page - no API required. With `inertia-server`, working with pages is based on the concept
+of page definitions created by the `definePage` function. 
+
+```ts
+const { definePage } = createInertia(...);
+```
+
+## Creating page definitions
+
+Page definitions consist of the component name, and a set of props that will be passed to it.
+
+```ts ~/server/inertia.ts
+import { createInertia, prop, mergedProp, deepMergedProp, type PageParams } from 'inertia-server';
+
+const homePage = definePage({
+  component: 'Home',
+  props: {
+    title: prop<string>(),
+    description: prop<string>(),
+    posts: mergedProp<Posts[]>(),
+    tasks: deepMergedProp<Tasks[]>().deferred(),
+  },
+  // Make sure that the 'user' shared key is available
+  // during render, otherwise it is optional
+  requireShared: ['user'],
+});
+
+export type HomePageParams = PageParams<typeof homePage>;
+```
+
+When handling inertia requests, you can render your page by passing a page context
+to the `render` function. It is created by invoking your page definition with the required props.
+
+```typescript
+inertia.render(homePage({
+  title: 'Welcome',
+  description: 'Hello, World!',
+  posts: () => getPosts(req.params.page),
+  tasks: () => getTasks(),
+}));
+```
+
+On the client, you can use the created definitions to access your data with full type safety.
+
+<CodeGroup>
+  ```tsx react icon="react"
+  import type { HomePageParams } from '~/server/inertia';
+
+  function Home({ props }: HomePageParams) {
+    /**
+     * interface Props {
+     *  title: string;
+     *  description: string;
+     *  posts: Posts[];
+     *  tasks?: Tasks[];
+     *  user: User
+     * }
+    */
+    const { title, description, posts, tasks } = props;
+    return (
+      <div>
+        <h1>{title}</h1>
+        <p>Hello, {user.name}! {description}</p>
+        <ul>
+          {posts.map((post) => (
+            <li key={post.id}>{post.title}</li>
+          ))}
+        </ul>
+        {tasks ? (
+          <ul>
+            {tasks.map((task) => (
+              <li key={task.id}>{task.title}</li>
+            ))}
+          </ul>
+        ) : "Loading tasks..."}
+      </div>
+    );
+  }
+  ```
+
+  ```svelte svelte icon="/assets/icons/svelte.svg"
+  <script>
+    import type { HomePageParams } from '~/server/inertia';
+
+    /**
+     * interface Props {
+     *  title: string;
+     *  description: string;
+     *  posts: Posts[];
+     *  tasks?: Tasks[];
+     *  user: User
+     * }
+    */
+    let { title, description, posts, tasks, user } = $props<HomePageParams['props']>();
+  </script>
+
+  <div>
+    <h1>{title}</h1>
+    <p>Hello, {user.name}! {description}</p>
+    <ul>
+      {#each posts as post}
+        <li key={post.id}>{post.title}</li>
+      {/each}
+    </ul>
+    {#if tasks}
+      {#each tasks as task}
+        <li key={task.id}>{task.title}</li>
+      {/each}
+    {:else}
+      <p>Loading tasks...</p>
+    {/if}
+  </div>
+  ```
+
+</CodeGroup>
+
+## Data & Props
+
+Page props builders - `prop`, `mergedProp`, `deepMergedProp` provide various chained methods 
+to help you customize your data loading behavior. 
+
+### Merging props
+
+### Deferred props
+
+### Once Props
+
+### Lazy loading
+When rendering a page, every `prop` value can be a literal, or a lazy evaluated function.
+It's up to you which data loading strategy to use. Let's see how it works on an example.
+
+```ts
+const page = definePage({
+  component: 'Home',
+  props: {
+    foo: prop<string>(),
+    bar: prop<string>().deferred(),
+  },
+})
+
+// Option 1
+inertia.render(page({
+  foo: 'foo',
+  bar: () => getBar(),
+}));
+
+// Option 2
+inertia.render(page({
+  foo: () => 'foo',
+  bar: getBar(),
+}));
+```
+
+In both cases, the `foo` prop will be sent during every page request, but if you define
+its value as a function, it will be resolved when inertia needs to parse its value,
+not at the moment of the `render` call. It is especially useful when you work with partial
+data requests.
+
+Interestingly, the `bar` prop will not be parsed by inertia on the first request. By default
+you should provide a lazy evaluable function to defer execution of your code until it's needed.
+But if you want to, you can provide a literal value at the moment of the `render` call. It will
+not be sent to the client, but it may useful if you want to execute some side effect when a page
+is rendered and the prop prepared, no matter whether its loaded or not.
+
+
+### Always and Optional props
+
+
+## Accessing other page object properties

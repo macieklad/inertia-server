@@ -3,19 +3,8 @@ import {
 	usersIndexPage,
 	usersCreatePage,
 	usersEditPage,
-	type User,
 } from "../inertia";
-
-const mockUsers: User[] = [
-	{ id: 1, name: "John Doe", email: "john@example.com", role: "Admin", createdAt: "2024-01-15" },
-	{ id: 2, name: "Jane Smith", email: "jane@example.com", role: "User", createdAt: "2024-02-20" },
-	{ id: 3, name: "Bob Johnson", email: "bob@example.com", role: "User", createdAt: "2024-03-10" },
-	{ id: 4, name: "Alice Brown", email: "alice@example.com", role: "Editor", createdAt: "2024-03-25" },
-	{ id: 5, name: "Charlie Wilson", email: "charlie@example.com", role: "User", createdAt: "2024-04-05" },
-	{ id: 6, name: "Diana Miller", email: "diana@example.com", role: "Admin", createdAt: "2024-04-15" },
-	{ id: 7, name: "Edward Davis", email: "edward@example.com", role: "User", createdAt: "2024-05-01" },
-	{ id: 8, name: "Fiona Garcia", email: "fiona@example.com", role: "Editor", createdAt: "2024-05-10" },
-];
+import { users } from "../db";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -24,26 +13,13 @@ export const usersRoutes = router
 		const search = (query.search as string) || "";
 		const page = parseInt(query.page as string) || 1;
 
-		let filteredUsers = mockUsers;
-		if (search) {
-			filteredUsers = mockUsers.filter(
-				(u) =>
-					u.name.toLowerCase().includes(search.toLowerCase()) ||
-					u.email.toLowerCase().includes(search.toLowerCase()),
-			);
-		}
-
-		const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
-		const startIndex = (page - 1) * ITEMS_PER_PAGE;
-		const paginatedUsers = filteredUsers.slice(
-			startIndex,
-			startIndex + ITEMS_PER_PAGE,
-		);
+		const result = users.getAll(search || undefined, page, ITEMS_PER_PAGE);
+		const totalPages = Math.ceil(result.total / ITEMS_PER_PAGE);
 
 		return inertia.render(
 			usersIndexPage({
 				title: "Users",
-				users: paginatedUsers,
+				users: result.users,
 				search,
 				page,
 				totalPages,
@@ -71,6 +47,8 @@ export const usersRoutes = router
 		}
 		if (!email || !email.includes("@")) {
 			errors.email = "Please enter a valid email address";
+		} else if (users.emailExists(email)) {
+			errors.email = "This email is already taken";
 		}
 		if (!password || password.length < 8) {
 			errors.password = "Password must be at least 8 characters";
@@ -81,11 +59,14 @@ export const usersRoutes = router
 			return inertia.redirect("/users/create");
 		}
 
+		users.create(name!.trim(), email!, "User");
+		inertia.flash("success", "User created successfully!");
 		return inertia.redirect("/users");
 	})
 	.get("/users/:id/edit", ({ inertia, params }) => {
-		const user = mockUsers.find((u) => u.id === parseInt(params.id));
+		const user = users.getById(parseInt(params.id));
 		if (!user) {
+			inertia.flash("error", "User not found");
 			return inertia.redirect("/users");
 		}
 
@@ -97,6 +78,7 @@ export const usersRoutes = router
 		);
 	})
 	.put("/users/:id", ({ inertia, params, body }) => {
+		const id = parseInt(params.id);
 		const { name, email } = body as { name?: string; email?: string };
 
 		const errors: Record<string, string> = {};
@@ -106,15 +88,27 @@ export const usersRoutes = router
 		}
 		if (!email || !email.includes("@")) {
 			errors.email = "Please enter a valid email address";
+		} else if (users.emailExists(email, id)) {
+			errors.email = "This email is already taken";
 		}
 
 		if (Object.keys(errors).length > 0) {
-			inertia.errors(errors);
-			return inertia.redirect(`/users/${params.id}/edit`);
+			inertia.errors(errors, "editUser");
+			return inertia.redirect(`/users/${id}/edit`);
 		}
 
+		users.update(id, name!.trim(), email!);
+		inertia.flash("success", "User updated successfully!");
 		return inertia.redirect("/users");
 	})
-	.delete("/users/:id", ({ inertia }) => {
+	.delete("/users/:id", ({ inertia, params }) => {
+		const id = parseInt(params.id);
+		const user = users.getById(id);
+
+		if (user) {
+			users.delete(id);
+			inertia.flash("success", `User "${user.name}" deleted`);
+		}
+
 		return inertia.redirect("/users");
 	});

@@ -118,4 +118,18 @@ export const listsRoutes = router
 		}
 
 		return inertia.redirect("/conversations");
+	})
+	.put("/conversations/:id", ({ inertia, params, body }) => {
+		const conversation = mockConversations.find(
+			(c) => c.id === parseInt(params.id),
+		);
+		if (conversation) {
+			const { title } = body as { title: string };
+			if (title?.trim()) {
+				conversation.title = title.trim();
+				conversation.lastActivity = new Date().toISOString();
+			}
+		}
+
+		return inertia.redirect("/conversations");
 	});

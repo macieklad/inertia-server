@@ -19,9 +19,8 @@ if (IS_PROD) {
 		}),
 	);
 } else {
-	const { startViteServer } = await import("./vite");
-	const vitePort = await startViteServer();
-	console.log(`Vite dev server running at http://localhost:${vitePort}`);
+	const { createViteExtension } = await import("./vite");
+	app.use(createViteExtension({ enabled: true }));
 }
 
 app

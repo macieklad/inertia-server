@@ -2,6 +2,7 @@ import { router } from "@inertiajs/react";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { CodeBlock } from "../components/CodeBlock";
 import { PageProps } from "inertia-server";
 import type { alwaysPage } from "@/inertia";
 
@@ -40,6 +41,10 @@ export default function AlwaysPropsDemo({ title, regularData, authData }: PagePr
 							<span className="font-medium">Permissions:</span>{" "}
 							{authData.permissions.join(", ")}
 						</p>
+						<p>
+							<span className="font-medium">Last checked:</span>{" "}
+							{authData.lastChecked}
+						</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -52,6 +57,37 @@ export default function AlwaysPropsDemo({ title, regularData, authData }: PagePr
 				Note: Even though we only request "regularData", the authData will still be included 
 				because it's marked as "always".
 			</p>
+
+			<CodeBlock
+				tabs={[
+					{
+						label: "Server",
+						language: "typescript",
+						code: `export const alwaysPage = definePage({
+  component: "AlwaysPropsDemo",
+  props: {
+    title: prop<string>(),
+    regularData: prop<string>(),
+    authData: prop<{
+      isAuthenticated: boolean;
+      permissions: string[];
+      lastChecked: string;
+    }>().always(),
+  },
+});`,
+					},
+					{
+						label: "Client",
+						language: "tsx",
+						code: `// authData is ALWAYS refreshed on every request
+// Even with partial reloads: router.reload({ only: ["title"] })
+// authData will still be re-evaluated
+
+// Regular props are skipped unless explicitly requested
+// Always props are never skipped`,
+					},
+				]}
+			/>
 		</Layout>
 	);
 }

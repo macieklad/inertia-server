@@ -1,0 +1,168 @@
+---
+title: Responses
+description: 'How to render pages and handle inertia requests'
+---
+
+When you create your inertia helper, you are ready to handle incoming inertia requests.
+
+```ts 
+const inertia = createHelper({ request })
+```
+
+## Rendering pages
+
+The fundamental unit of inertia request is the page object returned from your app routes.
+On first request, inertia server will respond with a rendered HTML, and on subsequent requests, 
+it will respond with a JSON payload with information on how to update the client-side app.
+
+To create a page response, use the `render` function.
+
+```typescript
+inertia.render(page);
+```
+
+It takes a page context as the first argument. To create it we invoke a page
+definition with the required props. Page definitions are created using the `definePage` function
+that you set up during the package configuration. It's thanks to page definitions that we can 
+provide type safety between the client and server code.
+
+<Note>Working with pages is covered in detail in the [pages](/basics/pages) section.</Note>
+```typescript
+import { prop } from 'inertia-server';
+import { definePage } from '~/server/inertia';
+
+const homePage = definePage({
+  component: 'Home',
+  props: {
+    title: prop<string>(),
+  },
+});
+
+const requestPage = homePage({
+  title: 'Welcome',
+});
+
+const response = await inertia.render(page);
+```
+
+
+## Redirects
+
+If we return normal redirect response from our server, it doesn't take inertia features into account. Make sure to use 
+a dedicated function that creates an appropriate `Response` object for the current inertia request.
+
+```typescript
+return inertia.redirect('/users');
+```
+
+## State
+Every server application comes with global data associated with the request. It would be cumbersome to pass errors,
+user objects or flash messages manually to every page. Server helper has dedicated functions to make this process easier.
+
+### Shared data
+
+Shared keys are available to all pages in the application. To provide them, you can call the `share` function 
+somewhere during your request lifecycle. Middleware is the most common place to do this.
+
+```ts
+inertia.share({
+  user: {
+    id: 1,
+    name: 'John Doe',
+  },
+});
+```
+
+Inertia can memoize your shared data on the client, and not reload it on navigation. To do this, the `shareOnce` function.
+
+```ts
+inertia.shareOnce({
+  appHeader: 'Loaded!',
+});
+```
+
+Both presented calls will result in type error. We make sure that our data is type safe and available to the client, and it is not obvious where, or if, 
+the shared keys will be provided. To fix it, you will have to register those types globally.
+
+```ts ~/server/inertia.ts
+declare module "@inertiajs/core" {
+  export interface InertiaConfig {
+    sharedPageProps: {
+      auth: { user: { id: number; name: string } };
+      appName: string;
+    };
+  }
+}
+```
+
+Now you will get type hints when using the `share` function. Every page props will have access `user` and `appName` keys.
+
+<Note>Shared keys will be marked as optional, so in addition to their base type they will get a `undefined` added to it.</Note>
+
+If you want to make sure that a share key is available to a page, you can use the `requireShared` option when defining the page.
+Then it won't be optional in the generated page prop types. Also, a server error will be thrown if the key was not provided.
+
+```ts
+const page = definePage({
+  requireShared: ['user'],
+});
+```
+
+
+### Errors
+
+If any errors are caught during the request, you can pass them your page with `errors` function.
+
+<Note>For errors to work correctly, you have to configure [sessions](/integrations/sessions) when creating your inertia helper</Note>
+```ts
+inertia.errors({
+  email: 'Invalid email',
+});
+```
+
+Some pages may have multiple forms, and if they are posted to the same route, you don't want to mix errors from different forms.
+In those cases, users may send an inertia request that will request only the global errors and ones from a specific error bag.
+
+By passing a second argument to the `errors` function, you can assign errors to a specific error bag. They won't be included
+in the response unless the request specifically asks for them.
+
+```ts
+inertia.errors({
+  email: 'Invalid email',
+}, 'login');
+```
+
+You can configure error value type globally to provide type safety:
+
+```ts
+declare module "@inertiajs/core" {
+  export interface InertiaConfig {
+    errorValueType: string[];
+  }
+}
+```
+
+Error bags are merged into your page object as a single `errors` object. Error bags are nested under their own keys inside of it.
+So if you call `inertia.errors({ email: 'Invalid email' }, 'login')`, you can access your page `errors.login.email` key.
+
+### Flash messages
+
+Flash messages are a way to share some keys with your client in the next response. They are added with the `flash` function 
+and are available under the `flash` key in the page props.  
+
+<Note>For flashing to work correctly, you have to configure [sessions](/integrations/sessions) when creating your inertia helper</Note>
+```ts
+inertia.flash('success', 'User created successfully');
+```
+
+Flash messages are merged into your page props as a single `flash` object. Yes, you have guessed it, they have to be typed too :>
+
+```ts
+declare module "@inertiajs/core" {
+  export interface InertiaConfig {
+    flashDataType: {
+      toast?: { type: "success" | "error"; message: string };
+    };
+  }
+}
+```

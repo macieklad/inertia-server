@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { CodeBlock } from "../components/CodeBlock";
 import { PageProps } from "inertia-server";
 import type { optionalPage } from "@/inertia";
 
@@ -72,6 +73,34 @@ export default function OptionalPropsDemo({ title, basicData, heavyData }: PageP
 					</CardContent>
 				</Card>
 			</div>
+
+			<CodeBlock
+				tabs={[
+					{
+						label: "Server",
+						language: "typescript",
+						code: `export const optionalPage = definePage({
+  component: "OptionalPropsDemo",
+  props: {
+    title: prop<string>(),
+    basicData: prop<string>(),
+    heavyData: prop<{ items: string[] }>().optional(),
+  },
+});`,
+					},
+					{
+						label: "Client",
+						language: "tsx",
+						code: `// Request optional props on demand
+router.reload({ only: ["heavyData"] });
+
+// Or via link
+<Link href="/optional" only={["heavyData"]}>
+  Load Heavy Data
+</Link>`,
+					},
+				]}
+			/>
 		</Layout>
 	);
 }

@@ -9,7 +9,6 @@ interface RootProps {
 export default function Root({ page, manifest }: RootProps) {
 	const isDev = !manifest;
 	const entrypoint = "src/ui/main.tsx";
-	const viteDevServer = "http://localhost:5173";
 
 	const jsPath = manifest?.[entrypoint]?.file
 		? `/assets/${manifest[entrypoint].file}`
@@ -34,8 +33,8 @@ export default function Root({ page, manifest }: RootProps) {
 				<div id="app" data-page={JSON.stringify(page)} />
 				{isDev ? (
 					<>
-						<script type="module" src={`${viteDevServer}/@vite/client`} />
-						<script type="module" src={`${viteDevServer}/src/ui/main.tsx`} />
+						<script type="module" src="/vite/@vite/client" />
+						<script type="module" src="/vite/src/ui/main.tsx" />
 					</>
 				) : (
 					jsPath && <script type="module" src={jsPath} />

@@ -64,6 +64,11 @@ export interface InertiaHelper {
 
   location(url: string): Response;
 
+  flash<K extends keyof Inertia.Flashable>(
+    key: K,
+    value: Inertia.Flashable[K]
+  ): void;
+
   errors(
     errors: Record<string, string>,
     bag?: keyof Inertia.ErrorBags | string

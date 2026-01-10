@@ -49,11 +49,12 @@ export const propsRoutes = router
     return inertia.render(
       alwaysPage({
         title: "Always Props Demo",
-        regularData: "This is regular data",
-        authData: {
+        regularData: `Regular data fetched at ${new Date().toLocaleTimeString()}`,
+        authData: () => ({
           isAuthenticated: true,
           permissions: ["read", "write", "delete"],
-        },
+          lastChecked: new Date().toLocaleTimeString(),
+        }),
       })
     );
   });

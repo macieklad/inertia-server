@@ -1,9 +1,11 @@
 import { useForm } from "@inertiajs/react";
 import { Layout } from "../components/Layout";
+import { FlashMessages } from "../components/FlashMessages";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { CodeBlock } from "../components/CodeBlock";
 import { cn } from "../lib/utils";
 import { PageProps } from "inertia-server";
 import type { errorBagsPage } from "@/inertia";
@@ -11,6 +13,7 @@ import type { errorBagsPage } from "@/inertia";
 export default function ErrorBagsDemo({ title, errors }: PageProps<typeof errorBagsPage>) {
 	return (
 		<Layout title={title}>
+			<FlashMessages />
 			<p className="mb-8 text-muted-foreground">
 				This page demonstrates error bags. Each form has its own error bag, 
 				so validation errors from one form don't affect the other.
@@ -20,6 +23,36 @@ export default function ErrorBagsDemo({ title, errors }: PageProps<typeof errorB
 				<LoginForm errors={errors.login} />
 				<CreateUserForm errors={errors.createUser} />
 			</div>
+
+			<CodeBlock
+				tabs={[
+					{
+						label: "Server",
+						language: "typescript",
+						code: `declare global {
+  namespace Inertia {
+    interface ErrorBags {
+      login: { email?: string; password?: string };
+      register: { name?: string; email?: string };
+    }
+  }
+}
+
+// Return errors for a specific bag
+inertia.errors("login", { email: "Invalid email" });`,
+					},
+					{
+						label: "Client",
+						language: "tsx",
+						code: `// Access errors from usePage
+const { errors } = usePage<PageProps>().props;
+
+// Errors are namespaced by bag
+errors.login?.email    // "Invalid email"
+errors.register?.name  // undefined`,
+					},
+				]}
+			/>
 		</Layout>
 	);
 }

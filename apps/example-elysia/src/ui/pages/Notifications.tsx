@@ -3,6 +3,7 @@ import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Card, CardContent } from "../components/ui/card";
+import { CodeBlock } from "../components/CodeBlock";
 import { cn } from "../lib/utils";
 import { PageProps } from "inertia-server";
 import type { notificationsPage } from "@/inertia";
@@ -62,6 +63,30 @@ export default function Notifications({ title, notifications }: PageProps<typeof
 					</p>
 				)}
 			</div>
+
+			<CodeBlock
+				tabs={[
+					{
+						label: "Server",
+						language: "typescript",
+						code: `export const notificationsPage = definePage({
+  component: "Notifications",
+  props: {
+    title: prop<string>(),
+    notifications: mergedProp<Notification[]>({ matchOn: "id" }).prepend(),
+  },
+});`,
+					},
+					{
+						label: "Client",
+						language: "tsx",
+						code: `// On redirect after POST, new notification is PREPENDED
+// .prepend() adds new items to the START of the array
+// Existing notifications are preserved
+// matchOn: "id" prevents duplicates`,
+					},
+				]}
+			/>
 		</Layout>
 	);
 }

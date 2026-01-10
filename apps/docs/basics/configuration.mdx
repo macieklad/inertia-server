@@ -1,0 +1,48 @@
+---
+title: Configuration
+description: 'Customise you inertia experience'
+---
+
+At various stages of inertia experience, you can configure various aspects of your setup and make use of the whole inertia ecosystem.
+
+## Asset versioning
+
+In the `createInertia` function, the `version` key is responsible for the [asset versioning](https://inertiajs.com/docs/v2/advanced/asset-versioning) feature.
+
+```ts
+const {} = createInertia({
+  version: '1.0.0',
+});
+```
+
+## History encryption
+
+If you want to enable or disable [history encryption](https://inertiajs.com/docs/v2/security/history-encryption), you can:
+
+- define global `encryptHistory` when setting up inertia
+- provide `encryptHistory` option your page definition
+- add options to the `render` function of your page
+
+Those values are merged in a top-to-bottom order. The last one wins.
+
+```ts
+const {} = createInertia({
+  encryptHistory: true,
+});
+
+const page = definePage({
+  encryptHistory: true,
+});
+
+inertia.render(page, {
+  encryptHistory: true,
+});
+```
+
+## Clearing history
+
+To clear history, call `clearHistory` function on the server helper.
+
+```ts
+inertia.clearHistory();
+```

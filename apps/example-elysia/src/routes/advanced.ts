@@ -39,6 +39,7 @@ export const advancedRoutes = router
 			return inertia.redirect("/error-bags");
 		}
 
+		inertia.flash("success", "Login successful!");
 		return inertia.redirect("/error-bags");
 	})
 	.post("/error-bags/form2", ({ inertia, body }) => {
@@ -65,5 +66,6 @@ export const advancedRoutes = router
 			return inertia.redirect("/error-bags");
 		}
 
+		inertia.flash("success", "User created!");
 		return inertia.redirect("/error-bags");
 	});

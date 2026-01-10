@@ -4,7 +4,6 @@ import {
   mergedProp,
   deepMergedProp,
 } from "inertia-server";
-import { elysiaAdapter } from "inertia-server/elysia";
 import { renderToHtml } from "./ui/index";
 import { loadManifest } from "./manifest";
 
@@ -22,6 +21,7 @@ declare global {
       contact: { name?: string; email?: string; message?: string };
       createUser: { name?: string; email?: string; password?: string };
       login: { email?: string; password?: string };
+      editUser: { name?: string; email?: string };
     }
   }
 }
@@ -32,8 +32,6 @@ export const { definePage, createHelper } = createInertia({
   version: "1.0.0",
   render: (page) => renderToHtml(page, manifest),
 });
-
-export const inertiaPlugin = elysiaAdapter(createHelper);
 
 export const homePage = definePage({
   component: "Home",
@@ -131,6 +129,7 @@ export const alwaysPage = definePage({
     authData: prop<{
       isAuthenticated: boolean;
       permissions: string[];
+      lastChecked: string;
     }>().always(),
   },
 });

@@ -166,6 +166,7 @@ export function createInertia(config: CreateInertiaConfig) {
 					requestOptions,
 					currentFlash,
 					stagedErrors,
+					request.url,
 				);
 
 				const url = page.url || new URL(request.url).pathname;
@@ -218,6 +219,10 @@ export function createInertia(config: CreateInertiaConfig) {
 				return createExternalRedirectResponse(url);
 			},
 
+			flash(key, value): void {
+				currentFlash[key] = value;
+			},
+
 			errors(errs, bag): void {
 				if (bag) {
 					stagedErrors[bag] = errs;
@@ -267,6 +272,7 @@ async function resolvePageProps(
 	requestOptions: InertiaRequestOptions,
 	flash: Record<string, unknown>,
 	stagedErrors: Record<string, Record<string, string>>,
+	requestUrl: string,
 ): Promise<InertiaPage> {
 	const { component, schema, values, options, version } = context;
 
@@ -287,11 +293,13 @@ async function resolvePageProps(
 	const partialExceptSet = new Set(requestOptions.partialExcept);
 	const exceptOncePropsSet = new Set(requestOptions.exceptOnceProps);
 
+	const urlParams = new URLSearchParams(new URL(requestUrl).search);
+
 	for (const [propKey, builder] of Object.entries(schema)) {
 		const state = builder[BUILDER_STATE];
 		const value = values[propKey as keyof typeof values];
 
-		collectBuilderMetadata(propKey, state, {
+		collectBuilderMetadata(propKey, state, urlParams, {
 			deferredProps,
 			mergeProps,
 			prependProps,
@@ -346,18 +354,19 @@ async function resolvePageProps(
 		page.clearHistory = options.clearHistory;
 	}
 
-	// Add optional fields only if they have content
-	// For partial reloads, we typically don't send metadata again
+	// Deferred/once metadata only on initial load (prevents infinite fetch loops)
 	if (!isPartialReload) {
 		if (Object.keys(deferredProps).length > 0)
 			page.deferredProps = deferredProps;
-		if (mergeProps.length > 0) page.mergeProps = mergeProps;
-		if (prependProps.length > 0) page.prependProps = prependProps;
-		if (deepMergeProps.length > 0) page.deepMergeProps = deepMergeProps;
-		if (matchPropsOn.length > 0) page.matchPropsOn = matchPropsOn;
-		if (Object.keys(scrollProps).length > 0) page.scrollProps = scrollProps;
 		if (Object.keys(onceProps).length > 0) page.onceProps = onceProps;
 	}
+
+	// Merge metadata always sent (needed for client-side merging)
+	if (mergeProps.length > 0) page.mergeProps = mergeProps;
+	if (prependProps.length > 0) page.prependProps = prependProps;
+	if (deepMergeProps.length > 0) page.deepMergeProps = deepMergeProps;
+	if (matchPropsOn.length > 0) page.matchPropsOn = matchPropsOn;
+	if (Object.keys(scrollProps).length > 0) page.scrollProps = scrollProps;
 
 	return page;
 }
@@ -460,6 +469,7 @@ function shapeErrors(
 function collectBuilderMetadata(
 	key: string,
 	meta: PropBuilderState,
+	urlParams: URLSearchParams,
 	collections: {
 		deferredProps: Record<string, string[]>;
 		mergeProps: string[];
@@ -480,7 +490,6 @@ function collectBuilderMetadata(
 		onceProps,
 	} = collections;
 
-	// Handle deferred props
 	if (meta.type === "deferred" || meta.deferredGroup) {
 		const group = meta.deferredGroup || "default";
 		if (!deferredProps[group]) {
@@ -488,7 +497,6 @@ function collectBuilderMetadata(
 		}
 		deferredProps[group].push(key);
 
-		// Track once config if this is a deferred+once prop
 		if (meta.isDeferredOnce || meta.once) {
 			onceProps[key] = {
 				prop: key,
@@ -497,7 +505,6 @@ function collectBuilderMetadata(
 		}
 	}
 
-	// Handle once props
 	if (meta.type === "once" || meta.once) {
 		onceProps[key] = {
 			prop: key,
@@ -505,7 +512,6 @@ function collectBuilderMetadata(
 		};
 	}
 
-	// Handle merge props
 	if (meta.type === "merge") {
 		if (meta.mergeDirection === "prepend") {
 			prependProps.push(key);
@@ -518,16 +524,17 @@ function collectBuilderMetadata(
 		}
 
 		if (meta.scrollOptions) {
+			const pageName = meta.scrollOptions.pageName;
+			const currentPage = parseInt(urlParams.get(pageName) ?? "1", 10);
 			scrollProps[key] = {
-				pageName: meta.scrollOptions.pageName,
-				previousPage: null,
+				pageName,
+				previousPage: currentPage > 1 ? currentPage - 1 : null,
 				nextPage: null,
-				currentPage: 1,
+				currentPage,
 			};
 		}
 	}
 
-	// Handle deep merge props
 	if (meta.type === "deepMerge") {
 		deepMergeProps.push(key);
 
@@ -536,11 +543,13 @@ function collectBuilderMetadata(
 		}
 
 		if (meta.scrollOptions) {
+			const pageName = meta.scrollOptions.pageName;
+			const currentPage = parseInt(urlParams.get(pageName) ?? "1", 10);
 			scrollProps[key] = {
-				pageName: meta.scrollOptions.pageName,
-				previousPage: null,
+				pageName,
+				previousPage: currentPage > 1 ? currentPage - 1 : null,
 				nextPage: null,
-				currentPage: 1,
+				currentPage,
 			};
 		}
 	}

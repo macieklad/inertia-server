@@ -4,6 +4,7 @@ import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { CodeBlock } from "../components/CodeBlock";
 import { cn } from "../lib/utils";
 import { PageProps } from "inertia-server";
 import type { conversationsPage } from "@/inertia";
@@ -12,13 +13,16 @@ export default function Conversations({ title, conversations }: PageProps<typeof
 	const [selectedId, setSelectedId] = useState<number | null>(
 		conversations[0]?.id ?? null,
 	);
+	const [isEditing, setIsEditing] = useState(false);
 
 	const selectedConversation = conversations.find((c) => c.id === selectedId);
 
 	return (
 		<Layout title={title}>
 			<p className="mb-6 text-muted-foreground">
-				Messages use deep merge props, allowing nested updates without replacing the entire conversation.
+				This demo uses deep merge props. Updates to conversation properties (like title) 
+				merge with existing data instead of replacing it. Try editing a conversation title 
+				or adding messages.
 			</p>
 
 			<div className="grid h-[500px] gap-4 lg:grid-cols-[280px_1fr]">
@@ -26,7 +30,10 @@ export default function Conversations({ title, conversations }: PageProps<typeof
 					{conversations.map((conversation) => (
 						<button
 							key={conversation.id}
-							onClick={() => setSelectedId(conversation.id)}
+							onClick={() => {
+								setSelectedId(conversation.id);
+								setIsEditing(false);
+							}}
 							className={cn(
 								"w-full border-b border-border p-4 text-left transition-colors hover:bg-muted/50",
 								selectedId === conversation.id && "bg-muted"
@@ -47,12 +54,32 @@ export default function Conversations({ title, conversations }: PageProps<typeof
 					{selectedConversation ? (
 						<>
 							<CardHeader className="shrink-0 border-b pb-3">
-								<CardTitle className="text-base">
-									{selectedConversation.title}
-								</CardTitle>
-								<p className="text-sm text-muted-foreground">
-									{selectedConversation.participants.join(", ")}
-								</p>
+								{isEditing ? (
+									<EditTitleForm 
+										conversationId={selectedConversation.id} 
+										currentTitle={selectedConversation.title}
+										onCancel={() => setIsEditing(false)}
+										onSuccess={() => setIsEditing(false)}
+									/>
+								) : (
+									<div className="flex items-center justify-between">
+										<div>
+											<CardTitle className="text-base">
+												{selectedConversation.title}
+											</CardTitle>
+											<p className="text-sm text-muted-foreground">
+												{selectedConversation.participants.join(", ")}
+											</p>
+										</div>
+										<Button 
+											variant="ghost" 
+											size="sm"
+											onClick={() => setIsEditing(true)}
+										>
+											Edit
+										</Button>
+									</div>
+								)}
 							</CardHeader>
 
 							<CardContent className="flex-1 space-y-4 overflow-auto py-4">
@@ -77,6 +104,31 @@ export default function Conversations({ title, conversations }: PageProps<typeof
 					)}
 				</Card>
 			</div>
+
+			<CodeBlock
+				tabs={[
+					{
+						label: "Server",
+						language: "typescript",
+						code: `export const conversationsPage = definePage({
+  component: "Conversations",
+  props: {
+    title: prop<string>(),
+    conversations: deepMergedProp<Conversation[]>({ matchOn: "id" }),
+  },
+});`,
+					},
+					{
+						label: "Client",
+						language: "tsx",
+						code: `// deepMergedProp recursively merges nested structures
+// When a message is added to conversation #1:
+// - The new message is merged INTO the existing messages array
+// - Other conversations remain untouched
+// - No full page data replacement needed`,
+					},
+				]}
+			/>
 		</Layout>
 	);
 }
@@ -106,6 +158,48 @@ function MessageForm({ conversationId }: { conversationId: number }) {
 			/>
 			<Button type="submit" disabled={processing || !data.text.trim()}>
 				Send
+			</Button>
+		</form>
+	);
+}
+
+function EditTitleForm({ 
+	conversationId, 
+	currentTitle, 
+	onCancel, 
+	onSuccess 
+}: { 
+	conversationId: number; 
+	currentTitle: string;
+	onCancel: () => void;
+	onSuccess: () => void;
+}) {
+	const { data, setData, put, processing } = useForm({
+		title: currentTitle,
+	});
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!data.title.trim()) return;
+		put(`/conversations/${conversationId}`, {
+			onSuccess,
+		});
+	};
+
+	return (
+		<form onSubmit={handleSubmit} className="flex items-center gap-2">
+			<Input
+				type="text"
+				value={data.title}
+				onChange={(e) => setData("title", e.target.value)}
+				className="flex-1"
+				autoFocus
+			/>
+			<Button type="submit" size="sm" disabled={processing || !data.title.trim()}>
+				Save
+			</Button>
+			<Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+				Cancel
 			</Button>
 		</form>
 	);

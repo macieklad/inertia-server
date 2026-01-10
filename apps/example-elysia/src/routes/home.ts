@@ -51,5 +51,6 @@ export const homeRoutes = router
 			return inertia.redirect("/contact");
 		}
 
-		return inertia.redirect("/");
+		inertia.flash("success", "Message sent successfully!");
+		return inertia.redirect("/contact");
 	});

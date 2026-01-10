@@ -1,0 +1,185 @@
+---
+title: Installation
+description: 'Detailed installation and setup instructions'
+---
+
+## Prerequisites
+
+Any runtime / server that supports standard `Reqiest` and `Response` objects, for example:
+  - Bun
+  - Deno
+  - Node.js (v18) - with some configuration
+  - Cloudflare Workers - with some configuration
+
+## 1. Install `inertia-server`
+
+<CodeGroup icon="terminal">
+
+```bash bun 
+bun add inertia-server
+```
+
+```bash pnpm 
+pnpm add inertia-server
+```
+
+```bash yarn
+yarn add inertia-server
+```
+
+```bash npm
+npm install inertia-server
+```
+
+</CodeGroup>
+
+## 2. Create server helpers
+
+On the server, we have to create the inertia helpers. They are used
+to define pages and parse your requests to handle inertia requests.
+
+`render` function defines how first inertia request is rendered to html.
+You can use your framework server-side rendering features to render the page, 
+or return a raw html string. Inertia server protocol requires us to provide a 
+div in the markup with `data-page` attribute that contains the json encoded
+initial page data.
+
+```typescript ~/server/inertia.ts
+import { createInertia, type InertiaPage } from 'inertia-server';
+import { renderToString } from 'react-dom/server';
+import Root from '~/components/root';
+
+export const { definePage, createHelper } = createInertia({
+  version: '1.0.0',
+  // framework specific component
+  render: (page) => renderToString(<Root page={page} />),
+  // raw template string
+  render: (page) => `
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My Inertia App</title>
+      </head>
+      <body>
+        <div id="app" data-page='${JSON.stringify(page)}' />
+      </body>
+    </html>
+  `,
+});
+
+function Root({ page }: { page: InertiaPage }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My Inertia App</title>
+      </head>
+      <body>
+        <div id="app" data-page={JSON.stringify(page)} />
+      </body>
+    </html>
+  );
+}
+```
+
+## Step 3: Connect inertia to your server
+
+On each request that works with inertia, you will create a helper that
+handles all inertia related logic and prepares the correct server response. 
+
+Any inertia requests that require session features (flashing, errors), require
+a flash adapter to be provided. Its role is to get and set session flash data
+for the current request.
+
+```typescript app.ts
+import { createHelper } from './inertia';
+
+app.get('/', ({ request }) => {
+  const inertia = createHelper({ request,
+    flash: {
+      // request.session is your specific session store
+      getAll: () => request.session.flash,
+      set: (data) => ({
+        ...request.session.flash,
+        ...data,
+      })
+    }
+  });
+
+  return inertia.render(page);
+});
+```
+
+To make this easier, you can see if we already provide an adapters for your framework.
+
+```typescript elysia
+import { elysiaAdapter } from 'inertia-server/elysia';
+import { createHelper } from './inertia';
+
+app.use(
+  elysiaAdapter(createHelper, (ctx) => ({
+    getAll: () => ctx.session?.flash ?? {},
+    set: (data) => { ctx.session.flash = data; },
+  }))
+)
+  .get('/', ({ inertia }) => {
+    return inertia.render(homePage({ title: 'Hello' }));
+  });
+```
+
+
+## Step 5: Setup inertia on the client
+[Follow the official documentation](https://inertiajs.com/docs/v2/installation/client-side-setup) for your framework of choice.
+
+You will have to setup bundling of your client side code. To make things easier,
+ we have a dedicated [bundling](/integrations/bundling) integration section in the documentation.
+
+## Step 6: Create your first page
+
+Define your props on the server:
+```tsx ~/server/inertia.ts
+import { prop, type PageProps } from 'inertia-server';
+import { definePage } from './inertia';
+
+export const homePage = definePage({
+  component: 'Home',
+  props: {
+    title: prop<string>(),
+    message: prop<string>(),
+  },
+});
+
+export type HomePageProps = PageProps<typeof homePage>;
+```
+
+Render your page on the server:
+```typescript
+import { homePage } from './inertia';
+
+app.get('/', ({ inertia }) => {
+  return inertia.render(homePage({ title: 'Hello' }));
+});
+```
+
+And add your client component:
+```tsx ~/ui/homepage.tsx
+import type { HomePageProps } from '~/server/inertia';
+
+export default function Home({ title, message }: HomePageProps) {
+  return (
+    <div>
+      <h1>{title}</h1>
+      <p>{message}</p>
+    </div>
+  );
+}
+```
+
+## Next Steps
+Congratulations on setting up inertia! Now you can start building your application.
+
+- Learn about [page definitions](/pages)
+- See our ecosystem [integrations](/integrations)
+
