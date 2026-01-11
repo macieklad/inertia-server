@@ -1,6 +1,7 @@
 # inertia-server
 
-> [!NOTE] Work in progress, core working, needs refactoring and docs
+> [!NOTE]
+> Work in progress, core working, needs refactoring and docs
 
 TypeScript library for server-side Inertia.js integration with Elysia (and other frameworks).
 
