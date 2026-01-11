@@ -1,37 +1,31 @@
+import type {
+  InertiaConfigFor,
+  ErrorValue,
+  FlashData,
+  SharedPageProps,
+  Page,
+} from "@inertiajs/core";
+
 export const REQUIRED_SHARED = Symbol("inertia:required-shared");
 export const BUILDER_STATE = Symbol("inertia:builder:state");
 export const BUILDER_TYPE = Symbol("inertia:builder:type");
 export const BUILDER_LAZY = Symbol("inertia:builder:lazy");
-/**
- * Users augment this namespace to make the inertia helper typesafe.
- *
- * @example
- * ```ts
- * declare namespace Inertia {
- *   interface Flashable {
- *     success: string
- *     error: string
- *   }
- *   interface Shared {
- *     user: User | null
- *   }
- *   interface ErrorBags {
- *     createUser: { name?: string; email?: string }
- *   }
- * }
- *
- * inertia.flash("success", "User created!");
- * inertia.share({ user: ctx.auth?.user });
- * inertia.errors({ email: "Invalid email" }, "createUser");
- * ```
- */
+
+export type { InertiaConfigFor, ErrorValue, FlashData, SharedPageProps };
+
 declare global {
-  namespace Inertia {
-    interface Flashable {}
-    interface Shared {}
+  namespace InertiaServer {
     interface ErrorBags {}
   }
 }
+
+type DefaultErrorBags = Record<string, Record<string, ErrorValue>>;
+
+type IsEmptyObject<T> = keyof T extends never ? true : false;
+
+export type ErrorBags = IsEmptyObject<InertiaServer.ErrorBags> extends true
+  ? DefaultErrorBags
+  : InertiaServer.ErrorBags;
 
 export interface CreateInertiaConfig {
   version: string | (() => string | Promise<string>);
@@ -44,16 +38,12 @@ export type CreateHelperFn = (
 ) => Promise<InertiaHelper>;
 
 export interface CreateHelperFnOptions {
-  /** The incoming request */
   request: Request;
-  /** Flash functions (optional, injected by adapter) */
   flash?: FlashAdapter | undefined;
 }
 
 export interface FlashAdapter {
-  /** Get all flash data from the session */
   getAll(): Record<string, unknown> | Promise<Record<string, unknown>>;
-  /** Set flash data (backend commits after request) */
   set(data: Record<string, unknown>): void | Promise<void>;
 }
 
@@ -64,26 +54,15 @@ export interface InertiaHelper {
 
   location(url: string): Response;
 
-  flash<K extends keyof Inertia.Flashable>(
-    key: K,
-    value: Inertia.Flashable[K]
-  ): void;
+  flash<K extends keyof FlashData>(key: K, value: FlashData[K]): void;
 
-  errors(
-    errors: Record<string, string>,
-    bag?: keyof Inertia.ErrorBags | string
-  ): void;
+  errors(errors: Record<string, ErrorValue>, bag?: string): void;
 
   encryptHistory(): void;
 
   clearHistory(): void;
 }
 
-/**
- * Inertia request options parsed from the request headers.
- *
- * @see https://inertiajs.com/docs/v2/core-concepts/the-protocol#request-headers
- */
 export interface InertiaRequestOptions {
   isInertia: boolean;
   version: string | null;
@@ -97,16 +76,8 @@ export interface InertiaRequestOptions {
   isPrefetch: boolean;
 }
 
-/**
- * @see https://inertiajs.com/docs/v2/core-concepts/the-protocol#param-x-inertia-infinite-scroll-merge-intent
- */
 export type MergeIntent = "append" | "prepend";
 
-/**
- * The Inertia page object sent in responses.
- *
- * @see https://inertiajs.com/docs/v2/core-concepts/the-protocol#the-page-object
- */
 export interface InertiaPage {
   component: string;
   props: Record<string, unknown>;
@@ -135,10 +106,6 @@ export interface InertiaPageOnceProps {
   expiresAt: number | null;
 }
 
-/**
- * Page context is an object that render function uses to match
- * request options with page props.
- */
 export interface InertiaPageContext<
   S extends PagePropsSchema = PagePropsSchema
 > {
@@ -149,33 +116,15 @@ export interface InertiaPageContext<
   readonly version: string;
 }
 
-/**
- * To provide type safety for inertia pages, `definePage` function returns a builder object
- * that can construct the page object according to the inertia protocol. By using functional
- * approach, we can provide type safety for the page object by using schema functions.
- *
- * @example
- * ```ts
- * const page = definePage({
- *   component: "Home",
- *   props: {
- *     title: prop<string>(),
- *   },
- * });
- * ```
- *
- * prop(), mergedProp(), deepMergedProp() return builders that are then processed by
- * the callback returned from definePage function to construct the page object.
- */
 export interface DefinePageFn {
-  <S extends PagePropsSchema, RS extends keyof Inertia.Shared = never>(
+  <S extends PagePropsSchema, RS extends keyof SharedPageProps = never>(
     options: DefinePageFnOptions<S, RS>
   ): InertiaPageDefinition<S, RS>;
 }
 
 export interface DefinePageFnOptions<
   S extends PagePropsSchema,
-  RS extends keyof Inertia.Shared = never
+  RS extends keyof SharedPageProps = never
 > {
   component: string;
   props: S;
@@ -184,7 +133,7 @@ export interface DefinePageFnOptions<
 
 export interface InertiaPageDefinition<
   S extends PagePropsSchema,
-  RS extends keyof Inertia.Shared = never
+  RS extends keyof SharedPageProps = never
 > {
   (
     values: PagePropsValues<S>,
@@ -203,20 +152,11 @@ export interface PageDefinitionFnOptions {
 
 export type PagePropsSchema = Record<string, AnyBuilder<unknown>>;
 
-/**
- * Values provided when calling a page definition.
- * All props can accept either a literal value or a resolver function.
- * Use resolvers when you want the value recomputed on every request.
- */
 export type PagePropsValues<S extends PagePropsSchema> = {
   [K in keyof S]: S[K] extends BaseBuilder<infer T, boolean>
     ? T | (() => T | Promise<T>)
     : never;
 };
-
-// =============================================================================
-// Builder Types
-// =============================================================================
 
 export type AnyBuilder<T = unknown> =
   | PropBuilder<T>
@@ -229,9 +169,7 @@ export type AnyBuilder<T = unknown> =
 export interface PropBuilder<T> extends BaseBuilder<T, false> {
   once(opts?: OncePropOptions): OnceBuilder<T>;
   deferred(group?: string): DeferredBuilder<T>;
-  /** Never included on standard visits; only when explicitly requested via partial reload */
   optional(): PropBuilder<T>;
-  /** Always included, even during partial reloads that don't request it */
   always(): PropBuilder<T>;
 }
 
@@ -263,10 +201,6 @@ export interface BaseBuilder<T, Lazy extends boolean = boolean> {
   readonly [BUILDER_LAZY]: Lazy;
 }
 
-// =============================================================================
-// Builder State & Options
-// =============================================================================
-
 export interface PropBuilderState {
   type: "prop" | "merge" | "deepMerge" | "once" | "deferred";
   once?: OncePropOptions | undefined;
@@ -275,9 +209,7 @@ export interface PropBuilderState {
   mergeDirection?: MergeIntent | undefined;
   scrollOptions?: ScrollPropOptions | undefined;
   isDeferredOnce?: boolean | undefined;
-  /** Never included on standard visits; only when explicitly requested via partial reload */
   isOptional?: boolean | undefined;
-  /** Always included, even during partial reloads that don't request it */
   isAlways?: boolean | undefined;
 }
 
@@ -291,40 +223,24 @@ export interface MergePropOptions {
 
 export interface ScrollPropOptions {
   pageName: string;
-} // =============================================================================
-// Type Utilities
-// =============================================================================
+}
 
-/**
- * Type helper for page component props.
- * Use this to type your page components.
- *
- * @example
- * ```ts
- * const homepage = definePage({
- *   component: "Home",
- *   props: { title: prop<string>() },
- *   requireShared: ['user'],
- * });
- *
- * function Page(props: PageProps<typeof homepage>) {
- *   // props.user is guaranteed to be non-null
- *   // props.title is string
- * }
- * ```
- */
 export type PageProps<
   // biome-ignore lint/suspicious/noExplicitAny: Relaxed constraint to allow specific page definitions
   T extends InertiaPageDefinition<any, any>
 > = T extends InertiaPageDefinition<infer S, infer RS>
   ? ExtractPropTypes<S> &
-      Omit<Inertia.Shared, RS> & {
-        [K in RS]: NonNullable<Inertia.Shared[K]>;
+      Omit<SharedPageProps, RS> & {
+        [K in RS]: NonNullable<SharedPageProps[K]>;
       } & {
-        flash: Partial<Inertia.Flashable>;
-        errors: Partial<Inertia.ErrorBags> & Record<string, string>;
+        flash: Partial<FlashData>;
+        errors: PageErrors;
       }
   : never;
+
+export type PageErrors = {
+  [K in keyof ErrorBags]?: ErrorBags[K];
+} & Record<string, ErrorValue>;
 
 export type ExtractPropTypes<S extends PagePropsSchema> = {
   [K in keyof S]: ExtractBuilderType<S[K]>;

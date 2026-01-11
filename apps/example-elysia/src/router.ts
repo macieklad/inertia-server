@@ -1,25 +1,27 @@
-import { Elysia } from "elysia";
+import { Context, Elysia } from "elysia";
 import { elysiaAdapter } from "inertia-server/elysia";
 import { createHelper } from "./inertia";
 import { sessionStore } from "./session";
 
 const inertiaPlugin = elysiaAdapter(createHelper, (ctx) => {
-	const sessionId = sessionStore.getSessionId(ctx.request);
-	const resolvedSessionId = sessionStore.getOrCreateSessionId(sessionId);
+  const { sessionId } = ctx as unknown as Context & { sessionId: string };
 
-	if (!sessionId) {
-		ctx.set.headers["Set-Cookie"] = sessionStore.createCookieHeader(resolvedSessionId);
-	}
-
-	return {
-		getAll: () => sessionStore.getFlash(resolvedSessionId),
-		set: (data) => {
-			sessionStore.setFlash(resolvedSessionId, data);
-			ctx.set.headers["Set-Cookie"] = sessionStore.createCookieHeader(resolvedSessionId);
-		},
-	};
+  return {
+    getAll: () => sessionStore.getFlash(sessionId),
+    set: (data) => {
+      sessionStore.setFlash(sessionId, data);
+    },
+  };
 });
 
 export const router = new Elysia({ name: "router" })
-	.use(inertiaPlugin)
-	.as("global");
+  .derive(async (ctx) => {
+    return { sessionId: sessionStore.getSessionId(ctx.request) };
+  })
+  .use(inertiaPlugin)
+  .onAfterHandle((ctx) => {
+    ctx.set.headers["Set-Cookie"] = sessionStore.createCookieHeader(
+      ctx.sessionId
+    );
+  })
+  .as("global");

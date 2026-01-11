@@ -18,7 +18,7 @@ export default function OncePropsDemo({ title, timestamp, config, plans }: PageP
 						<CardTitle className="text-base">Regular Prop (Changes Each Visit)</CardTitle>
 					</CardHeader>
 					<CardContent className="font-mono text-sm">
-						<p>Timestamp: {timestamp}</p>
+						<p data-testid="timestamp">Timestamp: {timestamp}</p>
 						<p className="text-xs text-muted-foreground">
 							Generated: {new Date(timestamp).toLocaleTimeString()}
 						</p>
@@ -32,7 +32,9 @@ export default function OncePropsDemo({ title, timestamp, config, plans }: PageP
 					<CardContent>
 						{config ? (
 							<pre className="whitespace-pre-wrap font-mono text-sm">
-								{JSON.stringify(config, null, 2)}
+								<span data-testid="config-theme">{config.theme}</span>
+								{" / "}
+								<span data-testid="config-locale">{config.locale}</span>
 							</pre>
 						) : (
 							<p className="text-sm text-muted-foreground">

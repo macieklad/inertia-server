@@ -13,6 +13,7 @@ export default function AlwaysPropsDemo({ title, regularData, authData }: PagePr
 
 	return (
 		<Layout title={title}>
+			<h1 data-testid="page-title" className="sr-only">{title}</h1>
 			<p className="mb-8 text-muted-foreground">
 				Always props are included even in partial reloads that don't request them. 
 				Try the partial reload button - auth data will still be included.
@@ -24,11 +25,11 @@ export default function AlwaysPropsDemo({ title, regularData, authData }: PagePr
 						<CardTitle className="text-base">Regular Data</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<p>{regularData}</p>
+						<p data-testid="regular-data">{regularData}</p>
 					</CardContent>
 				</Card>
 
-				<Card className="border-info/20 bg-info/10">
+				<Card className="border-info/20 bg-info/10" data-testid="auth-data">
 					<CardHeader className="pb-2">
 						<CardTitle className="text-base">Auth Data (Always Prop)</CardTitle>
 					</CardHeader>
@@ -43,14 +44,14 @@ export default function AlwaysPropsDemo({ title, regularData, authData }: PagePr
 						</p>
 						<p>
 							<span className="font-medium">Last checked:</span>{" "}
-							{authData.lastChecked}
+							<span data-testid="auth-last-checked">{authData.lastChecked}</span>
 						</p>
 					</CardContent>
 				</Card>
 			</div>
 
 			<Button onClick={reloadRegularOnly}>
-				Partial Reload (only regularData)
+				Partial Reload
 			</Button>
 
 			<p className="mt-4 text-sm text-muted-foreground">

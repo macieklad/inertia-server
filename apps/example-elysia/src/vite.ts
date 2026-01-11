@@ -1,12 +1,13 @@
 import { Elysia, status } from "elysia";
 import type { ViteDevServer } from "vite";
+import { createServer as createHttpServer } from "node:http";
 
 let viteServer: ViteDevServer | null = null;
 let viteInitPromise: Promise<ViteDevServer | null> | null = null;
 
 const IS_PROD = process.env.NODE_ENV === "production";
+const HMR_PORT = 24678;
 
-// Initialize Vite server early in development
 if (!IS_PROD) {
   getViteServer();
 }
@@ -48,12 +49,22 @@ async function createViteServer(): Promise<ViteDevServer | null> {
     return null;
   }
 
+  const hmrServer = createHttpServer();
+
   const { createServer } = await import("vite");
   viteServer = await createServer({
     server: {
       middlewareMode: true,
+      hmr: {
+        server: hmrServer,
+        port: HMR_PORT,
+      },
     },
     appType: "spa",
+  });
+
+  hmrServer.listen(HMR_PORT, () => {
+    console.log(`Vite HMR server running on port ${HMR_PORT}`);
   });
 
   return viteServer;
@@ -73,7 +84,6 @@ async function handleViteRequest(request: Request) {
 
   const handled = await new Promise<boolean>((resolve) => {
     vite.middlewares(req, res, () => {
-      // next() was called - vite didn't handle the request
       resolve(false);
     });
 

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@elysiajs/static": "^1.2.0",
+    "@inertiajs/core": "^2.3.8",
     "@inertiajs/react": "^2.0.0",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",

@@ -26,13 +26,14 @@ export default function UsersEdit({ title, user, errors }: PageProps<typeof user
 					<Label htmlFor="name">Name</Label>
 					<Input
 						id="name"
+						name="name"
 						type="text"
 						value={data.name}
 						onChange={(e) => setData("name", e.target.value)}
 						className={cn(errors.name && "border-destructive")}
 					/>
 					{errors.name && (
-						<p className="text-sm text-destructive">{errors.name}</p>
+						<p className="text-sm text-destructive" data-error="name">{errors.name}</p>
 					)}
 				</div>
 
@@ -40,13 +41,14 @@ export default function UsersEdit({ title, user, errors }: PageProps<typeof user
 					<Label htmlFor="email">Email</Label>
 					<Input
 						id="email"
+						name="email"
 						type="email"
 						value={data.email}
 						onChange={(e) => setData("email", e.target.value)}
 						className={cn(errors.email && "border-destructive")}
 					/>
 					{errors.email && (
-						<p className="text-sm text-destructive">{errors.email}</p>
+						<p className="text-sm text-destructive" data-error="email">{errors.email}</p>
 					)}
 				</div>
 
@@ -60,7 +62,7 @@ export default function UsersEdit({ title, user, errors }: PageProps<typeof user
 
 				<div className="flex gap-3">
 					<Button type="submit" disabled={processing}>
-						{processing ? "Saving..." : "Save Changes"}
+						{processing ? "Saving..." : "Update User"}
 					</Button>
 					<Button variant="outline" asChild>
 						<Link href="/users">Cancel</Link>

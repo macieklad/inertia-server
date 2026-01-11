@@ -31,13 +31,14 @@ export default function Contact({ title, errors }: PageProps<typeof contactPage>
 					<Label htmlFor="name">Name</Label>
 					<Input
 						id="name"
+						name="name"
 						type="text"
 						value={data.name}
 						onChange={(e) => setData("name", e.target.value)}
 						className={cn(contactErrors.name && "border-destructive")}
 					/>
 					{contactErrors.name && (
-						<p className="text-sm text-destructive">{contactErrors.name}</p>
+						<p className="text-sm text-destructive" data-error="name">{contactErrors.name}</p>
 					)}
 				</div>
 
@@ -45,13 +46,14 @@ export default function Contact({ title, errors }: PageProps<typeof contactPage>
 					<Label htmlFor="email">Email</Label>
 					<Input
 						id="email"
+						name="email"
 						type="email"
 						value={data.email}
 						onChange={(e) => setData("email", e.target.value)}
 						className={cn(contactErrors.email && "border-destructive")}
 					/>
 					{contactErrors.email && (
-						<p className="text-sm text-destructive">{contactErrors.email}</p>
+						<p className="text-sm text-destructive" data-error="email">{contactErrors.email}</p>
 					)}
 				</div>
 
@@ -59,13 +61,14 @@ export default function Contact({ title, errors }: PageProps<typeof contactPage>
 					<Label htmlFor="message">Message</Label>
 					<Textarea
 						id="message"
+						name="message"
 						value={data.message}
 						onChange={(e) => setData("message", e.target.value)}
 						rows={5}
 						className={cn(contactErrors.message && "border-destructive")}
 					/>
 					{contactErrors.message && (
-						<p className="text-sm text-destructive">{contactErrors.message}</p>
+						<p className="text-sm text-destructive" data-error="message">{contactErrors.message}</p>
 					)}
 				</div>
 

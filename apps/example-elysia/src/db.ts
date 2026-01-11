@@ -123,6 +123,6 @@ export const users = {
       ? "SELECT 1 FROM users WHERE email = ? AND id != ?"
       : "SELECT 1 FROM users WHERE email = ?";
     const params = excludeId ? [email, excludeId] : [email];
-    return db.prepare(query).get(...params) !== undefined;
+    return db.prepare(query).get(...params) !== null;
   },
 };

@@ -79,13 +79,14 @@ function LoginForm({ errors }: { errors?: { email?: string; password?: string } 
 						<Label htmlFor="login-email">Email</Label>
 						<Input
 							id="login-email"
+							name="login-email"
 							type="email"
 							value={data.email}
 							onChange={(e) => setData("email", e.target.value)}
 							className={cn(errors?.email && "border-destructive")}
 						/>
 						{errors?.email && (
-							<p className="text-sm text-destructive">{errors.email}</p>
+							<p className="text-sm text-destructive" data-error="login-email">{errors.email}</p>
 						)}
 					</div>
 
@@ -93,13 +94,14 @@ function LoginForm({ errors }: { errors?: { email?: string; password?: string } 
 						<Label htmlFor="login-password">Password</Label>
 						<Input
 							id="login-password"
+							name="login-password"
 							type="password"
 							value={data.password}
 							onChange={(e) => setData("password", e.target.value)}
 							className={cn(errors?.password && "border-destructive")}
 						/>
 						{errors?.password && (
-							<p className="text-sm text-destructive">{errors.password}</p>
+							<p className="text-sm text-destructive" data-error="login-password">{errors.password}</p>
 						)}
 					</div>
 
@@ -135,13 +137,14 @@ function CreateUserForm({ errors }: { errors?: { name?: string; email?: string; 
 						<Label htmlFor="create-name">Name</Label>
 						<Input
 							id="create-name"
+							name="create-name"
 							type="text"
 							value={data.name}
 							onChange={(e) => setData("name", e.target.value)}
 							className={cn(errors?.name && "border-destructive")}
 						/>
 						{errors?.name && (
-							<p className="text-sm text-destructive">{errors.name}</p>
+							<p className="text-sm text-destructive" data-error="create-name">{errors.name}</p>
 						)}
 					</div>
 
@@ -149,13 +152,14 @@ function CreateUserForm({ errors }: { errors?: { name?: string; email?: string; 
 						<Label htmlFor="create-email">Email</Label>
 						<Input
 							id="create-email"
+							name="create-email"
 							type="email"
 							value={data.email}
 							onChange={(e) => setData("email", e.target.value)}
 							className={cn(errors?.email && "border-destructive")}
 						/>
 						{errors?.email && (
-							<p className="text-sm text-destructive">{errors.email}</p>
+							<p className="text-sm text-destructive" data-error="create-email">{errors.email}</p>
 						)}
 					</div>
 
@@ -163,13 +167,14 @@ function CreateUserForm({ errors }: { errors?: { name?: string; email?: string; 
 						<Label htmlFor="create-password">Password</Label>
 						<Input
 							id="create-password"
+							name="create-password"
 							type="password"
 							value={data.password}
 							onChange={(e) => setData("password", e.target.value)}
 							className={cn(errors?.password && "border-destructive")}
 						/>
 						{errors?.password && (
-							<p className="text-sm text-destructive">{errors.password}</p>
+							<p className="text-sm text-destructive" data-error="create-password">{errors.password}</p>
 						)}
 					</div>
 

@@ -23,6 +23,9 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@inertiajs/core": "^2.3.8"
+  },
   "peerDependencies": {
     "elysia": ">=1.0.0"
   },

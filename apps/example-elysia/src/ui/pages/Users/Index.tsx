@@ -20,7 +20,7 @@ export default function UsersIndex({ title, users, search, page, totalPages }: P
 
 	const handleSearch = (e: React.FormEvent) => {
 		e.preventDefault();
-		router.get("/users", { search: searchValue, page: 1 }, { preserveState: true });
+		router.get("/users", { search: searchValue, page: 1 }, { preserveState: true, replace: false });
 	};
 
 	return (
@@ -31,6 +31,7 @@ export default function UsersIndex({ title, users, search, page, totalPages }: P
 				<form onSubmit={handleSearch} className="flex gap-2">
 					<Input
 						type="text"
+						name="search"
 						value={searchValue}
 						onChange={(e) => setSearchValue(e.target.value)}
 						placeholder="Search users..."

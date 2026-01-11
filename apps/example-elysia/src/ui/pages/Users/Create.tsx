@@ -28,13 +28,14 @@ export default function UsersCreate({ title, errors }: PageProps<typeof usersCre
 					<Label htmlFor="name">Name</Label>
 					<Input
 						id="name"
+						name="name"
 						type="text"
 						value={data.name}
 						onChange={(e) => setData("name", e.target.value)}
 						className={cn(formErrors.name && "border-destructive")}
 					/>
 					{formErrors.name && (
-						<p className="text-sm text-destructive">{formErrors.name}</p>
+						<p className="text-sm text-destructive" data-error="name">{formErrors.name}</p>
 					)}
 				</div>
 
@@ -42,13 +43,14 @@ export default function UsersCreate({ title, errors }: PageProps<typeof usersCre
 					<Label htmlFor="email">Email</Label>
 					<Input
 						id="email"
+						name="email"
 						type="email"
 						value={data.email}
 						onChange={(e) => setData("email", e.target.value)}
 						className={cn(formErrors.email && "border-destructive")}
 					/>
 					{formErrors.email && (
-						<p className="text-sm text-destructive">{formErrors.email}</p>
+						<p className="text-sm text-destructive" data-error="email">{formErrors.email}</p>
 					)}
 				</div>
 
@@ -56,13 +58,14 @@ export default function UsersCreate({ title, errors }: PageProps<typeof usersCre
 					<Label htmlFor="password">Password</Label>
 					<Input
 						id="password"
+						name="password"
 						type="password"
 						value={data.password}
 						onChange={(e) => setData("password", e.target.value)}
 						className={cn(formErrors.password && "border-destructive")}
 					/>
 					{formErrors.password && (
-						<p className="text-sm text-destructive">{formErrors.password}</p>
+						<p className="text-sm text-destructive" data-error="password">{formErrors.password}</p>
 					)}
 				</div>
 

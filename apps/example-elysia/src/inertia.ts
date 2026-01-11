@@ -7,16 +7,21 @@ import {
 import { renderToHtml } from "./ui/index";
 import { loadManifest } from "./manifest";
 
-declare global {
-  namespace Inertia {
-    interface Flashable {
+declare module "@inertiajs/core" {
+  export interface InertiaConfig {
+    flashDataType: {
       success?: string;
       error?: string;
-    }
-    interface Shared {
+    };
+    sharedPageProps: {
       appName: string;
       user?: { id: number; name: string; email: string } | null;
-    }
+    };
+  }
+}
+
+declare global {
+  namespace InertiaServer {
     interface ErrorBags {
       contact: { name?: string; email?: string; message?: string };
       createUser: { name?: string; email?: string; password?: string };

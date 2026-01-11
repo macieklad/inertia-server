@@ -24,6 +24,7 @@ import {
 	type PagePropsSchema,
 	type PagePropsValues,
 	type PropBuilderState,
+	type SharedPageProps,
 	BUILDER_STATE,
 } from "./types";
 
@@ -117,7 +118,7 @@ export {
 export function createInertia(config: CreateInertiaConfig) {
 	const definePage: DefinePageFn = <
 		S extends PagePropsSchema,
-		RS extends keyof Inertia.Shared = never,
+		RS extends keyof SharedPageProps = never,
 	>(
 		options: DefinePageFnOptions<S, RS>,
 	): InertiaPageDefinition<S, RS> => {
@@ -220,7 +221,7 @@ export function createInertia(config: CreateInertiaConfig) {
 			},
 
 			flash(key, value): void {
-				currentFlash[key] = value;
+				currentFlash[key as string] = value;
 			},
 
 			errors(errs, bag): void {
@@ -460,7 +461,7 @@ function shapeErrors(
 		return {};
 	}
 
-	return allErrors.default ?? {};
+	return allErrors;
 }
 
 /**

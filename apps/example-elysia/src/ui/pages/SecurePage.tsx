@@ -46,7 +46,7 @@ export default function SecurePage({ title, sensitiveData }: PageProps<typeof se
 						<CardTitle className="text-base">Sensitive Data</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<p className="font-mono text-sm">{sensitiveData}</p>
+						<p className="font-mono text-sm" data-testid="sensitive-data">{sensitiveData}</p>
 					</CardContent>
 				</Card>
 

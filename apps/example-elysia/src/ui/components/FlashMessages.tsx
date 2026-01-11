@@ -11,7 +11,7 @@ export function FlashMessages() {
 	return (
 		<div className="mb-4 space-y-2">
 			{flash.success && (
-				<div className="flex items-center gap-2 rounded-sm border border-success/20 bg-success/10 px-4 py-3">
+				<div data-flash="success" className="flex items-center gap-2 rounded-sm border border-success/20 bg-success/10 px-4 py-3">
 					<Badge variant="success" className="shrink-0">
 						Success
 					</Badge>
@@ -19,7 +19,7 @@ export function FlashMessages() {
 				</div>
 			)}
 			{flash.error && (
-				<div className="flex items-center gap-2 rounded-sm border border-destructive/20 bg-destructive/10 px-4 py-3">
+				<div data-flash="error" className="flex items-center gap-2 rounded-sm border border-destructive/20 bg-destructive/10 px-4 py-3">
 					<Badge variant="destructive" className="shrink-0">
 						Error
 					</Badge>

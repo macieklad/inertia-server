@@ -4,10 +4,6 @@ type SessionData = {
 
 const sessions = new Map<string, SessionData>();
 
-function generateSessionId(): string {
-  return crypto.randomUUID();
-}
-
 function getSession(sessionId: string | undefined): SessionData {
   if (!sessionId || !sessions.has(sessionId)) {
     return { flash: {} };
@@ -21,18 +17,18 @@ function setSession(sessionId: string, data: SessionData): void {
 
 export function createSessionMiddleware() {
   return {
-    getSessionId(request: Request): string | undefined {
+    getSessionId(request: Request) {
       const cookie = request.headers.get("cookie");
-      if (!cookie) return undefined;
-      const match = cookie.match(/session_id=([^;]+)/);
-      return match?.[1];
-    },
+      const id = cookie?.match(/session_id=([^;]+)/)?.[1];
 
-    getOrCreateSessionId(existingId: string | undefined): string {
-      if (existingId && sessions.has(existingId)) {
-        return existingId;
+      if (id) {
+        if (!sessions.has(id)) {
+          sessions.set(id, { flash: {} });
+        }
+        return id;
       }
-      const newId = generateSessionId();
+
+      const newId = crypto.randomUUID();
       sessions.set(newId, { flash: {} });
       return newId;
     },
@@ -49,7 +45,10 @@ export function createSessionMiddleware() {
 
     setFlash(sessionId: string, data: Record<string, unknown>): void {
       const session = getSession(sessionId);
-      session.flash = data;
+      session.flash = {
+        ...session.flash,
+        ...data,
+      };
       setSession(sessionId, session);
     },
 

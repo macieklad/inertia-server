@@ -48,9 +48,9 @@ export default function OptionalPropsDemo({ title, basicData, heavyData }: PageP
 					</CardHeader>
 					<CardContent>
 						{heavyData ? (
-							<div className="max-h-72 overflow-auto">
+							<div className="max-h-72 overflow-auto" data-testid="heavy-data-content">
 								<p className="mb-2 text-sm text-muted-foreground">
-									Showing {heavyData.items.length} items:
+									{heavyData.items.length} items loaded
 								</p>
 								<ul className="columns-3 gap-4 text-sm">
 									{heavyData.items.slice(0, 30).map((item, i) => (
@@ -66,7 +66,7 @@ export default function OptionalPropsDemo({ title, basicData, heavyData }: PageP
 								)}
 							</div>
 						) : (
-							<p className="text-muted-foreground">
+							<p className="text-muted-foreground" data-testid="heavy-data-placeholder">
 								Click the button above to load this optional data.
 							</p>
 						)}
