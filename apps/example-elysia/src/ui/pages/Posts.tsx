@@ -1,7 +1,6 @@
 import { router } from "@inertiajs/react";
 import type { PageProps } from "inertia-server";
 import type { postsPage } from "@/inertia";
-import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import {
@@ -64,39 +63,6 @@ export default function PostsIndex({
 					You've reached the end!
 				</p>
 			)}
-
-			<CodeBlock
-				tabs={[
-					{
-						label: "Server",
-						language: "typescript",
-						code: `export const postsIndexPage = definePage({
-  component: "Posts/Index",
-  props: {
-    title: prop<string>(),
-    posts: mergedProp<Post[]>({ matchOn: "id" }).scroll({ pageName: "page" }),
-    currentPage: prop<number>(),
-    hasMore: prop<boolean>(),
-  },
-});`,
-					},
-					{
-						label: "Client",
-						language: "tsx",
-						code: `// Load more triggers a partial reload
-const loadMore = () => {
-  router.reload({
-    data: { page: currentPage + 1 },
-    only: ["posts", "currentPage", "hasMore"],
-  });
-};
-
-// New posts are MERGED with existing posts
-// matchOn: "id" prevents duplicates
-// .scroll() accumulates results for infinite scroll`,
-					},
-				]}
-			/>
 		</Layout>
 	);
 }

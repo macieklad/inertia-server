@@ -5,22 +5,22 @@ test.describe("Suite 7: Shared Data", () => {
 		test("app name is available on all pages", async ({ page }) => {
 			await page.goto("/");
 			await expect(
-				page.getByRole("link", { name: /Inertia Server/ }),
-			).toBeVisible();
-
-			await page.goto("/about");
-			await expect(
-				page.getByRole("link", { name: /Inertia Server/ }),
+				page.getByRole("link", { name: /inertia.*server/i }),
 			).toBeVisible();
 
 			await page.goto("/users");
 			await expect(
-				page.getByRole("link", { name: /Inertia Server/ }),
+				page.getByRole("link", { name: /inertia.*server/i }),
 			).toBeVisible();
 
-			await page.goto("/contact");
+			await page.goto("/flash");
 			await expect(
-				page.getByRole("link", { name: /Inertia Server/ }),
+				page.getByRole("link", { name: /inertia.*server/i }),
+			).toBeVisible();
+
+			await page.goto("/deferred");
+			await expect(
+				page.getByRole("link", { name: /inertia.*server/i }),
 			).toBeVisible();
 		});
 
@@ -32,10 +32,10 @@ test.describe("Suite 7: Shared Data", () => {
 				const appName = await appNameLocator.textContent();
 				if (!appName) return;
 
-				await page.goto("/about");
+				await page.goto("/users");
 				await expect(appNameLocator).toHaveText(appName);
 
-				await page.goto("/users");
+				await page.goto("/deferred");
 				await expect(appNameLocator).toHaveText(appName);
 			}
 		});

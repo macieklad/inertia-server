@@ -1,5 +1,6 @@
 type SessionData = {
 	flash: Record<string, unknown>;
+	demoUser?: string;
 };
 
 const sessions = new Map<string, SessionData>();
@@ -54,6 +55,16 @@ export function createSessionMiddleware() {
 
 		createCookieHeader(sessionId: string): string {
 			return `session_id=${sessionId}; Path=/; HttpOnly; SameSite=Lax`;
+		},
+
+		getDemoUser(sessionId: string | undefined): string | undefined {
+			return getSession(sessionId).demoUser;
+		},
+
+		setDemoUser(sessionId: string, name: string | undefined): void {
+			const session = getSession(sessionId);
+			session.demoUser = name;
+			setSession(sessionId, session);
 		},
 	};
 }

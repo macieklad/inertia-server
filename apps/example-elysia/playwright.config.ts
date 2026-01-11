@@ -17,10 +17,20 @@ export default defineConfig({
 			use: { ...devices["Desktop Chrome"] },
 		},
 	],
-	webServer: {
-		command: "bun run dev",
-		url: "http://localhost:3000",
-		reuseExistingServer: !process.env.CI,
-		timeout: 120 * 1000,
-	},
+	webServer: [
+		{
+			command: "bun run dev:client",
+			url: "http://localhost:5173/@vite/client",
+			name: "client",
+			reuseExistingServer: !process.env.CI,
+			timeout: 60 * 1000,
+		},
+		{
+			command: "bun run dev:server",
+			url: "http://localhost:3000",
+			name: "server",
+			reuseExistingServer: !process.env.CI,
+			timeout: 60 * 1000,
+		},
+	],
 });

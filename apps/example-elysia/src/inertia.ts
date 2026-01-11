@@ -16,6 +16,7 @@ declare module "@inertiajs/core" {
 		sharedPageProps: {
 			appName: string;
 			user?: { id: number; name: string; email: string } | null;
+			demoUser?: string;
 		};
 	}
 }
@@ -23,7 +24,7 @@ declare module "@inertiajs/core" {
 declare global {
 	namespace InertiaServer {
 		interface ErrorBags {
-			contact: { name?: string; email?: string; message?: string };
+			flash: { name?: string; email?: string; message?: string };
 			createUser: { name?: string; email?: string; password?: string };
 			login: { email?: string; password?: string };
 			editUser: { name?: string; email?: string };
@@ -46,16 +47,8 @@ export const homePage = definePage({
 	},
 });
 
-export const aboutPage = definePage({
-	component: "About",
-	props: {
-		title: prop<string>(),
-		content: prop<string>(),
-	},
-});
-
-export const contactPage = definePage({
-	component: "Contact",
+export const flashPage = definePage({
+	component: "Flash",
 	props: {
 		title: prop<string>(),
 	},
@@ -189,11 +182,26 @@ export const conversationsPage = definePage({
 	},
 });
 
-export const securePage = definePage({
-	component: "SecurePage",
+export const historyStartPage = definePage({
+	component: "History/Start",
 	props: {
 		title: prop<string>(),
-		sensitiveData: prop<string>(),
+	},
+});
+
+export const historyFormPage = definePage({
+	component: "History/Form",
+	props: {
+		title: prop<string>(),
+	},
+});
+
+export const historyResultPage = definePage({
+	component: "History/Result",
+	props: {
+		title: prop<string>(),
+		userName: prop<string>(),
+		message: prop<string>(),
 	},
 });
 

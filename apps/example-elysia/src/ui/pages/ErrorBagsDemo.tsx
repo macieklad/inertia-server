@@ -1,7 +1,6 @@
 import { useForm } from "@inertiajs/react";
 import type { PageProps } from "inertia-server";
 import type { errorBagsPage } from "@/inertia";
-import { CodeBlock } from "../components/CodeBlock";
 import { FlashMessages } from "../components/FlashMessages";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
@@ -31,36 +30,6 @@ export default function ErrorBagsDemo({
 				<LoginForm errors={errors.login} />
 				<CreateUserForm errors={errors.createUser} />
 			</div>
-
-			<CodeBlock
-				tabs={[
-					{
-						label: "Server",
-						language: "typescript",
-						code: `declare global {
-  namespace Inertia {
-    interface ErrorBags {
-      login: { email?: string; password?: string };
-      register: { name?: string; email?: string };
-    }
-  }
-}
-
-// Return errors for a specific bag
-inertia.errors("login", { email: "Invalid email" });`,
-					},
-					{
-						label: "Client",
-						language: "tsx",
-						code: `// Access errors from usePage
-const { errors } = usePage<PageProps>().props;
-
-// Errors are namespaced by bag
-errors.login?.email    // "Invalid email"
-errors.register?.name  // undefined`,
-					},
-				]}
-			/>
 		</Layout>
 	);
 }

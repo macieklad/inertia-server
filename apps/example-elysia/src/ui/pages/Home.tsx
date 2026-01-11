@@ -21,33 +21,33 @@ export default function Home({
 
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				<FeatureCard
-					title="CRUD Operations"
-					description="Full user management with create, read, update, delete"
+					title="Users"
+					description="CRUD operations with forms and validation"
 					href="/users"
 				/>
 				<FeatureCard
 					title="Infinite Scroll"
-					description="Posts with merged props and pagination"
+					description="Merged props for paginated lists"
 					href="/posts"
 				/>
 				<FeatureCard
 					title="Deferred Props"
-					description="Lazy-load heavy data after initial render"
+					description="Lazy-load data after initial render"
 					href="/deferred"
 				/>
 				<FeatureCard
 					title="Once Props"
-					description="Cache data that rarely changes"
+					description="Cache props across navigations"
 					href="/once-props"
 				/>
 				<FeatureCard
-					title="Form Validation"
-					description="Server-side validation with error handling"
-					href="/contact"
+					title="Flash Messages"
+					description="One-time messages across redirects"
+					href="/flash"
 				/>
 				<FeatureCard
 					title="Error Bags"
-					description="Multiple forms with separate error bags"
+					description="Isolated validation per form"
 					href="/error-bags"
 				/>
 			</div>

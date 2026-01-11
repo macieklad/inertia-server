@@ -1,9 +1,21 @@
 import type { InertiaPage } from "inertia-server/types";
 import type { Manifest } from "../manifest";
 
+const VITE_DEV_SERVER = "http://localhost:5173";
+
 interface RootProps {
 	page: InertiaPage;
 	manifest: Manifest | null;
+}
+
+function getReactRefreshPreamble() {
+	return `
+import RefreshRuntime from "${VITE_DEV_SERVER}/@react-refresh"
+RefreshRuntime.injectIntoGlobalHook(window)
+window.$RefreshReg$ = () => {}
+window.$RefreshSig$ = () => (type) => type
+window.__vite_plugin_react_preamble_installed__ = true
+`;
 }
 
 export default function Root({ page, manifest }: RootProps) {
@@ -40,8 +52,12 @@ export default function Root({ page, manifest }: RootProps) {
 				<div id="app" data-page={JSON.stringify(page)} />
 				{isDev ? (
 					<>
-						<script type="module" src="/vite/@vite/client" />
-						<script type="module" src="/vite/src/ui/main.tsx" />
+						<script type="module" src={`${VITE_DEV_SERVER}/@vite/client`} />
+						<script
+							type="module"
+							dangerouslySetInnerHTML={{ __html: getReactRefreshPreamble() }}
+						/>
+						<script type="module" src={`${VITE_DEV_SERVER}/src/ui/main.tsx`} />
 					</>
 				) : (
 					jsPath && <script type="module" src={jsPath} />

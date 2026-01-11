@@ -1,7 +1,6 @@
 import { Deferred } from "@inertiajs/react";
 import type { PageProps } from "inertia-server";
 import type { deferredPage } from "@/inertia";
-import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import {
 	Card,
@@ -73,33 +72,6 @@ export default function DeferredDemo({
 					</CardContent>
 				</Card>
 			</div>
-
-			<CodeBlock
-				tabs={[
-					{
-						label: "Server",
-						language: "typescript",
-						code: `export const deferredPage = definePage({
-  component: "DeferredDemo",
-  props: {
-    title: prop<string>(),
-    quickData: prop<string>(),
-    slowData: prop<string>().deferred(),
-    sidebarData: prop<string[]>().deferred("sidebar"),
-  },
-});`,
-					},
-					{
-						label: "Client",
-						language: "tsx",
-						code: `import { Deferred } from "@inertiajs/react";
-
-<Deferred data="slowData" fallback={<Spinner />}>
-  <SlowContent data={slowData} />
-</Deferred>`,
-					},
-				]}
-			/>
 		</Layout>
 	);
 }

@@ -50,8 +50,8 @@ test.describe("prop loading strategies", () => {
 				.getByTestId("config-theme")
 				.textContent();
 
-			await page.goto("/about");
-			await expect(page.getByText("About Us")).toBeVisible();
+			await page.goto("/users");
+			await expect(page.getByRole("heading", { name: "Users" })).toBeVisible();
 
 			await page.goto("/once-props");
 			await expect(page.getByTestId("timestamp")).toBeVisible();

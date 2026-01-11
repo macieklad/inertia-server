@@ -2,7 +2,6 @@ import { router } from "@inertiajs/react";
 import type { PageProps } from "inertia-server";
 import { useState } from "react";
 import type { optionalPage } from "@/inertia";
-import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import {
@@ -95,34 +94,6 @@ export default function OptionalPropsDemo({
 					</CardContent>
 				</Card>
 			</div>
-
-			<CodeBlock
-				tabs={[
-					{
-						label: "Server",
-						language: "typescript",
-						code: `export const optionalPage = definePage({
-  component: "OptionalPropsDemo",
-  props: {
-    title: prop<string>(),
-    basicData: prop<string>(),
-    heavyData: prop<{ items: string[] }>().optional(),
-  },
-});`,
-					},
-					{
-						label: "Client",
-						language: "tsx",
-						code: `// Request optional props on demand
-router.reload({ only: ["heavyData"] });
-
-// Or via link
-<Link href="/optional" only={["heavyData"]}>
-  Load Heavy Data
-</Link>`,
-					},
-				]}
-			/>
 		</Layout>
 	);
 }

@@ -4,12 +4,7 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig(({ command }) => ({
-	base: command === "serve" ? "/vite/" : "/assets/",
-	server: {
-		hmr: {
-			clientPort: 24678,
-		},
-	},
+	base: command === "build" ? "/assets/" : "/",
 	build: {
 		outDir: "dist/client",
 		manifest: true,
@@ -17,6 +12,9 @@ export default defineConfig(({ command }) => ({
 		rollupOptions: {
 			input: "src/ui/main.tsx",
 		},
+	},
+	server: {
+		origin: "http://localhost:5173",
 	},
 	plugins: [react(), tsconfigPaths(), tailwindcss()],
 }));

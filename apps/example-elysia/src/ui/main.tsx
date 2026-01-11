@@ -1,4 +1,3 @@
-import "@vitejs/plugin-react/preamble";
 import "./globals.css";
 import { createInertiaApp } from "@inertiajs/react";
 import { createElement } from "react";

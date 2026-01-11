@@ -1,59 +1,99 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("Suite 5: History Management", () => {
-	test.describe("5.1 Encrypted History for Sensitive Pages", () => {
-		test("secure page has encrypted history state", async ({ page }) => {
-			await page.goto("/secure");
+test.describe("Suite 5: History & Remember", () => {
+	test.describe("5.1 Data Leak Without Encryption", () => {
+		test("useRemember data leaks after logout", async ({ page }) => {
+			await page.goto("/history-demo");
+			await page.evaluate(() => localStorage.clear());
 
-			await expect(
-				page.getByRole("heading", { name: "Secure Page" }),
-			).toBeVisible();
-			await expect(page.getByTestId("sensitive-data")).toBeVisible();
+			await page.getByTestId("name-input").fill("Alice");
+			await page.getByRole("button", { name: "Continue to Form" }).click();
 
-			const historyState = await page.evaluate(() => {
-				return JSON.stringify(window.history.state);
-			});
+			await expect(page.getByTestId("greeting")).toContainText("Hello, Alice!");
 
-			expect(historyState).not.toContain("sensitive information");
-		});
+			await page.getByTestId("message-input").fill("Alice's secret message");
+			await page.getByRole("button", { name: "Submit" }).click();
 
-		test("can navigate back to encrypted page", async ({ page }) => {
-			await page.goto("/");
-			await page.goto("/secure");
+			await expect(page.getByTestId("result-user")).toHaveText("Alice");
+			await expect(page.getByTestId("result-message")).toHaveText(
+				"Alice's secret message",
+			);
 
-			await expect(page.getByTestId("sensitive-data")).toBeVisible();
+			await page.getByTestId("logout-button").click();
 
-			await page.goto("/about");
-			await expect(
-				page.getByRole("heading", { name: "About Us" }),
-			).toBeVisible();
+			await page.getByTestId("go-back-button").click();
 
-			await page.goBack();
+			await expect(page.getByTestId("greeting")).toContainText("Guest mode");
 
-			await expect(
-				page.getByRole("heading", { name: "Secure Page" }),
-			).toBeVisible();
-			await expect(page.getByTestId("sensitive-data")).toBeVisible();
+			const messageInput = page.getByTestId("message-input");
+			await expect(messageInput).toHaveValue("Alice's secret message");
+
+			await expect(page.getByText("Data Leak Detected")).toBeVisible();
 		});
 	});
 
-	test.describe("5.2 Clear History on Logout", () => {
-		test("logout clears history and redirects home", async ({ page }) => {
-			await page.goto("/");
-			await page.goto("/secure");
+	test.describe("5.2 No Leak With Encryption", () => {
+		test("useRemember data is cleared with encryption enabled", async ({
+			page,
+		}) => {
+			await page.goto("/history-demo");
+			await page.evaluate(() => localStorage.clear());
 
-			await expect(
-				page.getByRole("heading", { name: "Secure Page" }),
-			).toBeVisible();
+			await page.getByTestId("name-input").fill("Alice");
+			await page.getByTestId("encrypt-checkbox").check();
+			await page.getByRole("button", { name: "Continue to Form" }).click();
 
-			await page
-				.getByRole("button", { name: "Logout & Clear History" })
-				.click();
+			await expect(page.getByTestId("greeting")).toContainText("Hello, Alice!");
 
-			await expect(page).toHaveURL("/");
-			await expect(
-				page.getByRole("heading", { name: "Welcome" }),
-			).toBeVisible();
+			await page.getByTestId("message-input").fill("Alice's secret");
+			await page.getByRole("button", { name: "Submit" }).click();
+
+			await expect(page.getByTestId("result-message")).toHaveText(
+				"Alice's secret",
+			);
+
+			await page.getByTestId("logout-button").click();
+			await page.getByTestId("go-back-button").click();
+
+			await page.waitForLoadState("networkidle");
+
+			await expect(page.getByTestId("greeting")).toContainText("Guest mode");
+
+			const messageInput = page.getByTestId("message-input");
+			await expect(messageInput).toHaveValue("");
+
+			await expect(page.getByText("Data Leak Detected")).not.toBeVisible();
+		});
+	});
+
+	test.describe("5.3 Full Flow", () => {
+		test("complete flow works correctly", async ({ page }) => {
+			await page.goto("/history-demo");
+			await page.evaluate(() => localStorage.clear());
+
+			await page.getByTestId("name-input").fill("Charlie");
+			await page.getByRole("button", { name: "Continue to Form" }).click();
+
+			await expect(page.getByTestId("greeting")).toContainText(
+				"Hello, Charlie!",
+			);
+
+			await page.getByTestId("message-input").fill("Hello from Charlie");
+			await page.getByRole("button", { name: "Submit" }).click();
+
+			await expect(page.getByText("Step 3: Submission Complete")).toBeVisible();
+			await expect(page.getByTestId("result-user")).toHaveText("Charlie");
+			await expect(page.getByTestId("result-message")).toHaveText(
+				"Hello from Charlie",
+			);
+		});
+
+		test("history state display is visible on start page", async ({ page }) => {
+			await page.goto("/history-demo");
+			await page.evaluate(() => localStorage.clear());
+
+			const historyState = page.getByTestId("history-state");
+			await expect(historyState).toBeVisible();
 		});
 	});
 });

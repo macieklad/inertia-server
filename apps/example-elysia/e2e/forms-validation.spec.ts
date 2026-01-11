@@ -95,9 +95,9 @@ test.describe("Suite 3: Forms & Validation", () => {
 		});
 	});
 
-	test.describe("3.3 Contact Form Success Flow", () => {
+	test.describe("3.3 Flash Form Success Flow", () => {
 		test("shows success flash after valid submission", async ({ page }) => {
-			await page.goto("/contact");
+			await page.goto("/flash");
 
 			await page.fill('[name="name"]', "John Doe");
 			await page.fill('[name="email"]', "john@example.com");
@@ -112,7 +112,7 @@ test.describe("Suite 3: Forms & Validation", () => {
 		});
 
 		test("flash message disappears after navigation", async ({ page }) => {
-			await page.goto("/contact");
+			await page.goto("/flash");
 
 			await page.fill('[name="name"]', "John Doe");
 			await page.fill('[name="email"]', "john@example.com");
@@ -124,8 +124,8 @@ test.describe("Suite 3: Forms & Validation", () => {
 
 			await expect(page.getByText("Message sent successfully")).toBeVisible();
 
-			await page.goto("/about");
-			await page.goto("/contact");
+			await page.goto("/users");
+			await page.goto("/flash");
 
 			await expect(
 				page.getByText("Message sent successfully"),

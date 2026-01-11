@@ -3,6 +3,7 @@
 Full working example of inertia-server with Elysia, React, and TypeScript.
 
 Demonstrates all inertia-server features:
+
 - Type-safe page definitions
 - Props (deferred, optional, always, merged)
 - Error bags and validation feedback
@@ -42,12 +43,6 @@ bun run build
 ```
 
 Outputs to `dist/`
-
-### Production
-
-```bash
-bun run start
-```
 
 Serves built client from `dist/client/` + runs server.
 

@@ -1,6 +1,6 @@
 import { useForm } from "@inertiajs/react";
 import type { PageProps } from "inertia-server";
-import type { contactPage } from "@/inertia";
+import type { flashPage } from "@/inertia";
 import { FlashMessages } from "../components/FlashMessages";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
@@ -9,21 +9,18 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { cn } from "../lib/utils";
 
-export default function Contact({
-	title,
-	errors,
-}: PageProps<typeof contactPage>) {
+export default function Flash({ title, errors }: PageProps<typeof flashPage>) {
 	const { data, setData, post, processing } = useForm({
 		name: "",
 		email: "",
 		message: "",
 	});
 
-	const contactErrors = errors.contact ?? {};
+	const flashErrors = errors.flash ?? {};
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		post("/contact");
+		post("/flash");
 	};
 
 	return (
@@ -38,11 +35,11 @@ export default function Contact({
 						type="text"
 						value={data.name}
 						onChange={(e) => setData("name", e.target.value)}
-						className={cn(contactErrors.name && "border-destructive")}
+						className={cn(flashErrors.name && "border-destructive")}
 					/>
-					{contactErrors.name && (
+					{flashErrors.name && (
 						<p className="text-sm text-destructive" data-error="name">
-							{contactErrors.name}
+							{flashErrors.name}
 						</p>
 					)}
 				</div>
@@ -55,11 +52,11 @@ export default function Contact({
 						type="email"
 						value={data.email}
 						onChange={(e) => setData("email", e.target.value)}
-						className={cn(contactErrors.email && "border-destructive")}
+						className={cn(flashErrors.email && "border-destructive")}
 					/>
-					{contactErrors.email && (
+					{flashErrors.email && (
 						<p className="text-sm text-destructive" data-error="email">
-							{contactErrors.email}
+							{flashErrors.email}
 						</p>
 					)}
 				</div>
@@ -72,11 +69,11 @@ export default function Contact({
 						value={data.message}
 						onChange={(e) => setData("message", e.target.value)}
 						rows={5}
-						className={cn(contactErrors.message && "border-destructive")}
+						className={cn(flashErrors.message && "border-destructive")}
 					/>
-					{contactErrors.message && (
+					{flashErrors.message && (
 						<p className="text-sm text-destructive" data-error="message">
-							{contactErrors.message}
+							{flashErrors.message}
 						</p>
 					)}
 				</div>

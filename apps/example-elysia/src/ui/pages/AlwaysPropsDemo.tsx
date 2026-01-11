@@ -1,7 +1,6 @@
 import { router } from "@inertiajs/react";
 import type { PageProps } from "inertia-server";
 import type { alwaysPage } from "@/inertia";
-import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import {
@@ -69,37 +68,6 @@ export default function AlwaysPropsDemo({
 				Note: Even though we only request "regularData", the authData will still
 				be included because it's marked as "always".
 			</p>
-
-			<CodeBlock
-				tabs={[
-					{
-						label: "Server",
-						language: "typescript",
-						code: `export const alwaysPage = definePage({
-  component: "AlwaysPropsDemo",
-  props: {
-    title: prop<string>(),
-    regularData: prop<string>(),
-    authData: prop<{
-      isAuthenticated: boolean;
-      permissions: string[];
-      lastChecked: string;
-    }>().always(),
-  },
-});`,
-					},
-					{
-						label: "Client",
-						language: "tsx",
-						code: `// authData is ALWAYS refreshed on every request
-// Even with partial reloads: router.reload({ only: ["title"] })
-// authData will still be re-evaluated
-
-// Regular props are skipped unless explicitly requested
-// Always props are never skipped`,
-					},
-				]}
-			/>
 		</Layout>
 	);
 }

@@ -6,7 +6,7 @@ import { propsRoutes } from "./routes/props";
 import { usersRoutes } from "./routes/users";
 
 const IS_PROD = process.env.NODE_ENV === "production";
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const PORT = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 3000;
 
 const app = new Elysia();
 
@@ -18,9 +18,6 @@ if (IS_PROD) {
 			prefix: "/assets",
 		}),
 	);
-} else {
-	const { createViteExtension } = await import("./vite");
-	app.use(createViteExtension({ enabled: true }));
 }
 
 app

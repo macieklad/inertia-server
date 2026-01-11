@@ -2,7 +2,6 @@ import { useForm } from "@inertiajs/react";
 import type { PageProps } from "inertia-server";
 import { useState } from "react";
 import type { conversationsPage } from "@/inertia";
-import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import {
@@ -111,31 +110,6 @@ export default function Conversations({
 					)}
 				</Card>
 			</div>
-
-			<CodeBlock
-				tabs={[
-					{
-						label: "Server",
-						language: "typescript",
-						code: `export const conversationsPage = definePage({
-  component: "Conversations",
-  props: {
-    title: prop<string>(),
-    conversations: deepMergedProp<Conversation[]>({ matchOn: "id" }),
-  },
-});`,
-					},
-					{
-						label: "Client",
-						language: "tsx",
-						code: `// deepMergedProp recursively merges nested structures
-// When a message is added to conversation #1:
-// - The new message is merged INTO the existing messages array
-// - Other conversations remain untouched
-// - No full page data replacement needed`,
-					},
-				]}
-			/>
 		</Layout>
 	);
 }

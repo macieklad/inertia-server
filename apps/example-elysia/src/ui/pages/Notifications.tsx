@@ -1,7 +1,6 @@
 import { router } from "@inertiajs/react";
 import type { PageProps } from "inertia-server";
 import type { notificationsPage } from "@/inertia";
-import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -67,30 +66,6 @@ export default function Notifications({
 					</p>
 				)}
 			</div>
-
-			<CodeBlock
-				tabs={[
-					{
-						label: "Server",
-						language: "typescript",
-						code: `export const notificationsPage = definePage({
-  component: "Notifications",
-  props: {
-    title: prop<string>(),
-    notifications: mergedProp<Notification[]>({ matchOn: "id" }).prepend(),
-  },
-});`,
-					},
-					{
-						label: "Client",
-						language: "tsx",
-						code: `// On redirect after POST, new notification is PREPENDED
-// .prepend() adds new items to the START of the array
-// Existing notifications are preserved
-// matchOn: "id" prevents duplicates`,
-					},
-				]}
-			/>
 		</Layout>
 	);
 }

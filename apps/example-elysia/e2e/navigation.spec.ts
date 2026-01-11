@@ -19,7 +19,7 @@ test.describe("navigation & redirects", () => {
 	});
 
 	test("same page reloads preserves flash message", async ({ page }) => {
-		await page.goto("/contact");
+		await page.goto("/flash");
 
 		await page.fill('[name="name"]', "Flash Test");
 		await page.fill('[name="email"]', "flash@test.com");
@@ -30,7 +30,7 @@ test.describe("navigation & redirects", () => {
 
 		await page.getByRole("button", { name: "Send Message" }).click();
 
-		await expect(page).toHaveURL("/contact", { timeout: 10000 });
+		await expect(page).toHaveURL("/flash", { timeout: 10000 });
 		await expect(page.getByText("Message sent successfully")).toBeVisible();
 	});
 });

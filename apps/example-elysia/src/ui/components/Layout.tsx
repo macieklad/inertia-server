@@ -1,5 +1,6 @@
 import { Link, usePage } from "@inertiajs/react";
 import type { ReactNode } from "react";
+import logoSrc from "../assets/logo.svg";
 import { cn } from "../lib/utils";
 
 interface LayoutProps {
@@ -10,11 +11,7 @@ interface LayoutProps {
 const navGroups = [
 	{
 		label: "Getting Started",
-		links: [
-			{ href: "/", label: "Home" },
-			{ href: "/about", label: "About" },
-			{ href: "/contact", label: "Contact" },
-		],
+		links: [{ href: "/", label: "Home" }],
 	},
 	{
 		label: "CRUD",
@@ -27,6 +24,7 @@ const navGroups = [
 			{ href: "/once-props", label: "Once" },
 			{ href: "/optional-props", label: "Optional" },
 			{ href: "/always-props", label: "Always" },
+			{ href: "/flash", label: "Flash" },
 		],
 	},
 	{
@@ -40,7 +38,7 @@ const navGroups = [
 	{
 		label: "Advanced",
 		links: [
-			{ href: "/secure", label: "History Encryption" },
+			{ href: "/history-demo", label: "History & Remember" },
 			{ href: "/error-bags", label: "Error Bags" },
 		],
 	},
@@ -53,11 +51,8 @@ export function Layout({ children, title }: LayoutProps) {
 		<div className="flex min-h-screen bg-background">
 			<aside className="sticky top-0 flex h-screen w-56 shrink-0 flex-col border-r bg-muted/30">
 				<div className="border-b p-4">
-					<Link href="/" className="flex items-center gap-2 no-underline">
-						<div className="flex h-8 w-8 items-center justify-center rounded-sm bg-brand font-bold text-brand-foreground">
-							IS
-						</div>
-						<span className="font-bold">Inertia Server</span>
+					<Link href="/" className="block no-underline">
+						<img src={logoSrc} alt="inertia >> server" className="h-6" />
 					</Link>
 				</div>
 				<nav className="flex-1 overflow-auto p-4">

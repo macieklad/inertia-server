@@ -1,20 +1,59 @@
-import { errorBagsPage, securePage } from "../inertia";
+import {
+	errorBagsPage,
+	historyFormPage,
+	historyResultPage,
+	historyStartPage,
+} from "../inertia";
 import { router } from "../router";
 
 export const advancedRoutes = router
-	.get("/secure", ({ inertia }) => {
-		inertia.encryptHistory();
+	.get("/history-demo", ({ inertia }) => {
 		return inertia.render(
-			securePage({
-				title: "Secure Page",
-				sensitiveData:
-					"This is sensitive information that should be encrypted in history",
+			historyStartPage({
+				title: "History & Remember Demo",
 			}),
 		);
 	})
-	.post("/logout", ({ inertia }) => {
-		inertia.clearHistory();
-		return inertia.redirect("/");
+	.get("/history-demo/start", ({ inertia }) => {
+		// GET endpoint for when history decryption fails and Inertia refreshes
+		return inertia.render(
+			historyFormPage({
+				title: "Enter a message",
+			}),
+		);
+	})
+	.post("/history-demo/start", ({ inertia, body }) => {
+		const { encrypt } = body as { name: string; encrypt?: string };
+		const shouldEncrypt = encrypt === "on";
+
+		if (shouldEncrypt) {
+			inertia.encryptHistory();
+		}
+
+		return inertia.render(
+			historyFormPage({
+				title: "Enter a message",
+			}),
+		);
+	})
+	.post("/history-demo/submit", ({ inertia, body }) => {
+		const { userName, message, encrypt } = body as {
+			userName: string;
+			message: string;
+			encrypt?: string;
+		};
+
+		if (encrypt === "on") {
+			inertia.clearHistory();
+		}
+
+		return inertia.render(
+			historyResultPage({
+				title: "Result",
+				userName,
+				message,
+			}),
+		);
 	})
 	.get("/error-bags", ({ inertia }) => {
 		return inertia.render(

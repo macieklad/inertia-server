@@ -1,33 +1,24 @@
-import { aboutPage, contactPage, homePage } from "../inertia";
+import { flashPage, homePage } from "../inertia";
 import { router } from "../router";
 
 export const homeRoutes = router
 	.get("/", ({ inertia }) => {
 		return inertia.render(
 			homePage({
-				title: "Welcome to Inertia Server",
+				title: "Inertia Server Demo",
 				description:
-					"A modern server-side rendering solution for React with Elysia",
+					"Interactive examples demonstrating inertia-server features with Elysia and React.",
 			}),
 		);
 	})
-	.get("/about", ({ inertia }) => {
+	.get("/flash", ({ inertia }) => {
 		return inertia.render(
-			aboutPage({
-				title: "About Us",
-				content:
-					"Inertia Server brings the best of both worlds: server-side routing with client-side rendering.",
+			flashPage({
+				title: "Flash Messages",
 			}),
 		);
 	})
-	.get("/contact", ({ inertia }) => {
-		return inertia.render(
-			contactPage({
-				title: "Contact Us",
-			}),
-		);
-	})
-	.post("/contact", ({ inertia, body }) => {
+	.post("/flash", ({ inertia, body }) => {
 		const { name, email, message } = body as {
 			name?: string;
 			email?: string;
@@ -47,10 +38,10 @@ export const homeRoutes = router
 		}
 
 		if (Object.keys(errors).length > 0) {
-			inertia.errors(errors, "contact");
-			return inertia.redirect("/contact");
+			inertia.errors(errors, "flash");
+			return inertia.redirect("/flash");
 		}
 
 		inertia.flash("success", "Message sent successfully!");
-		return inertia.redirect("/contact");
+		return inertia.redirect("/flash");
 	});
