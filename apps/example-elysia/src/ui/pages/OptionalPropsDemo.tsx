@@ -1,13 +1,22 @@
 import { router } from "@inertiajs/react";
+import type { PageProps } from "inertia-server";
 import { useState } from "react";
+import type { optionalPage } from "@/inertia";
+import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
-import { CodeBlock } from "../components/CodeBlock";
-import { PageProps } from "inertia-server";
-import type { optionalPage } from "@/inertia";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "../components/ui/card";
 
-export default function OptionalPropsDemo({ title, basicData, heavyData }: PageProps<typeof optionalPage>) {
+export default function OptionalPropsDemo({
+	title,
+	basicData,
+	heavyData,
+}: PageProps<typeof optionalPage>) {
 	const [loading, setLoading] = useState(false);
 
 	const loadHeavyData = () => {
@@ -21,13 +30,16 @@ export default function OptionalPropsDemo({ title, basicData, heavyData }: PageP
 	return (
 		<Layout title={title}>
 			<p className="mb-8 text-muted-foreground">
-				Optional props are never included in standard visits. They must be explicitly requested via partial reloads.
+				Optional props are never included in standard visits. They must be
+				explicitly requested via partial reloads.
 			</p>
 
 			<div className="space-y-4">
 				<Card className="border-success/20 bg-success/10">
 					<CardHeader className="pb-2">
-						<CardTitle className="text-base">Basic Data (Always Loaded)</CardTitle>
+						<CardTitle className="text-base">
+							Basic Data (Always Loaded)
+						</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<p>{basicData}</p>
@@ -43,12 +55,19 @@ export default function OptionalPropsDemo({ title, basicData, heavyData }: PageP
 							variant={heavyData ? "secondary" : "default"}
 							size="sm"
 						>
-							{loading ? "Loading..." : heavyData ? "Loaded" : "Load Heavy Data"}
+							{loading
+								? "Loading..."
+								: heavyData
+									? "Loaded"
+									: "Load Heavy Data"}
 						</Button>
 					</CardHeader>
 					<CardContent>
 						{heavyData ? (
-							<div className="max-h-72 overflow-auto" data-testid="heavy-data-content">
+							<div
+								className="max-h-72 overflow-auto"
+								data-testid="heavy-data-content"
+							>
 								<p className="mb-2 text-sm text-muted-foreground">
 									{heavyData.items.length} items loaded
 								</p>
@@ -66,7 +85,10 @@ export default function OptionalPropsDemo({ title, basicData, heavyData }: PageP
 								)}
 							</div>
 						) : (
-							<p className="text-muted-foreground" data-testid="heavy-data-placeholder">
+							<p
+								className="text-muted-foreground"
+								data-testid="heavy-data-placeholder"
+							>
 								Click the button above to load this optional data.
 							</p>
 						)}

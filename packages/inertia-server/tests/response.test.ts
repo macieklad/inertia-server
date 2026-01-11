@@ -184,4 +184,3 @@ describe("createDataPageAttribute", () => {
 		expect(parsed.mergeProps).toEqual(["posts"]);
 	});
 });
-

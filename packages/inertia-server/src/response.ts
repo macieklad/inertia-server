@@ -25,17 +25,17 @@ export const RESPONSE_HEADER_VARY = "Vary";
  * @returns Response with JSON body and Inertia headers
  */
 export function createJsonResponse(
-  page: InertiaPage,
-  _requestOptions?: InertiaRequestOptions
+	page: InertiaPage,
+	_requestOptions?: InertiaRequestOptions,
 ): Response {
-  return new Response(JSON.stringify(page), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/json",
-      [RESPONSE_HEADER_INERTIA]: "true",
-      [RESPONSE_HEADER_VARY]: "X-Inertia",
-    },
-  });
+	return new Response(JSON.stringify(page), {
+		status: 200,
+		headers: {
+			"Content-Type": "application/json",
+			[RESPONSE_HEADER_INERTIA]: "true",
+			[RESPONSE_HEADER_VARY]: "X-Inertia",
+		},
+	});
 }
 
 /**
@@ -45,13 +45,13 @@ export function createJsonResponse(
  * @returns Response with HTML body
  */
 export function createHtmlResponse(html: string): Response {
-  return new Response(html, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      [RESPONSE_HEADER_VARY]: "X-Inertia",
-    },
-  });
+	return new Response(html, {
+		status: 200,
+		headers: {
+			"Content-Type": "text/html; charset=utf-8",
+			[RESPONSE_HEADER_VARY]: "X-Inertia",
+		},
+	});
 }
 
 /**
@@ -62,16 +62,16 @@ export function createHtmlResponse(html: string): Response {
  * @returns Redirect response
  */
 export function createRedirectResponse(
-  url: string,
-  status: 302 | 303 = 302
+	url: string,
+	status: 302 | 303 = 302,
 ): Response {
-  return new Response(null, {
-    status,
-    headers: {
-      Location: url,
-      [RESPONSE_HEADER_VARY]: "X-Inertia",
-    },
-  });
+	return new Response(null, {
+		status,
+		headers: {
+			Location: url,
+			[RESPONSE_HEADER_VARY]: "X-Inertia",
+		},
+	});
 }
 
 /**
@@ -82,12 +82,12 @@ export function createRedirectResponse(
  * @returns 409 Conflict response with X-Inertia-Location header
  */
 export function createExternalRedirectResponse(url: string): Response {
-  return new Response(null, {
-    status: 409,
-    headers: {
-      [RESPONSE_HEADER_LOCATION]: url,
-    },
-  });
+	return new Response(null, {
+		status: 409,
+		headers: {
+			[RESPONSE_HEADER_LOCATION]: url,
+		},
+	});
 }
 
 /**
@@ -98,12 +98,12 @@ export function createExternalRedirectResponse(url: string): Response {
  * @returns 409 Conflict response with X-Inertia-Location header
  */
 export function createVersionConflictResponse(url: string): Response {
-  return new Response(null, {
-    status: 409,
-    headers: {
-      [RESPONSE_HEADER_LOCATION]: url,
-    },
-  });
+	return new Response(null, {
+		status: 409,
+		headers: {
+			[RESPONSE_HEADER_LOCATION]: url,
+		},
+	});
 }
 
 // =============================================================================
@@ -119,14 +119,14 @@ export function createVersionConflictResponse(url: string): Response {
  * @returns The appropriate status code
  */
 export function getRedirectStatus(
-  method: string,
-  preferredStatus: 302 | 303 = 302
+	method: string,
+	preferredStatus: 302 | 303 = 302,
 ): 302 | 303 {
-  // For PUT, PATCH, DELETE requests, use 303 to force GET on redirect
-  if (["PUT", "PATCH", "DELETE"].includes(method.toUpperCase())) {
-    return 303;
-  }
-  return preferredStatus;
+	// For PUT, PATCH, DELETE requests, use 303 to force GET on redirect
+	if (["PUT", "PATCH", "DELETE"].includes(method.toUpperCase())) {
+		return 303;
+	}
+	return preferredStatus;
 }
 
 /**
@@ -137,26 +137,26 @@ export function getRedirectStatus(
  * @returns True if versions match or client version is not provided
  */
 export function checkVersionMatch(
-  clientVersion: string | null,
-  serverVersion: string
+	clientVersion: string | null,
+	serverVersion: string,
 ): boolean {
-  // If no client version, it's an initial request - no conflict
-  if (!clientVersion) {
-    return true;
-  }
-  return clientVersion === serverVersion;
+	// If no client version, it's an initial request - no conflict
+	if (!clientVersion) {
+		return true;
+	}
+	return clientVersion === serverVersion;
 }
 
 /**
  * Creates the data-page attribute value (JSON string).
  */
 export function createDataPageAttribute(page: InertiaPage): string {
-  return JSON.stringify(page);
+	return JSON.stringify(page);
 }
 
 /**
  * Encodes the page object for the data-page attribute with HTML entity escaping.
  */
 export function encodePageForAttribute(page: InertiaPage): string {
-  return JSON.stringify(page).replace(/'/g, "&#039;").replace(/"/g, "&quot;");
+	return JSON.stringify(page).replace(/'/g, "&#039;").replace(/"/g, "&quot;");
 }

@@ -1,5 +1,5 @@
+import { errorBagsPage, securePage } from "../inertia";
 import { router } from "../router";
-import { securePage, errorBagsPage } from "../inertia";
 
 export const advancedRoutes = router
 	.get("/secure", ({ inertia }) => {
@@ -7,7 +7,8 @@ export const advancedRoutes = router
 		return inertia.render(
 			securePage({
 				title: "Secure Page",
-				sensitiveData: "This is sensitive information that should be encrypted in history",
+				sensitiveData:
+					"This is sensitive information that should be encrypted in history",
 			}),
 		);
 	})

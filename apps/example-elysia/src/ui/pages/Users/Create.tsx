@@ -1,13 +1,16 @@
-import { useForm, Link } from "@inertiajs/react";
+import { Link, useForm } from "@inertiajs/react";
+import type { PageProps } from "inertia-server";
+import type { usersCreatePage } from "@/inertia";
 import { Layout } from "../../components/Layout";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { cn } from "../../lib/utils";
-import { PageProps } from "inertia-server";
-import type { usersCreatePage } from "@/inertia";
 
-export default function UsersCreate({ title, errors }: PageProps<typeof usersCreatePage>) {
+export default function UsersCreate({
+	title,
+	errors,
+}: PageProps<typeof usersCreatePage>) {
 	const { data, setData, post, processing } = useForm({
 		name: "",
 		email: "",
@@ -35,7 +38,9 @@ export default function UsersCreate({ title, errors }: PageProps<typeof usersCre
 						className={cn(formErrors.name && "border-destructive")}
 					/>
 					{formErrors.name && (
-						<p className="text-sm text-destructive" data-error="name">{formErrors.name}</p>
+						<p className="text-sm text-destructive" data-error="name">
+							{formErrors.name}
+						</p>
 					)}
 				</div>
 
@@ -50,7 +55,9 @@ export default function UsersCreate({ title, errors }: PageProps<typeof usersCre
 						className={cn(formErrors.email && "border-destructive")}
 					/>
 					{formErrors.email && (
-						<p className="text-sm text-destructive" data-error="email">{formErrors.email}</p>
+						<p className="text-sm text-destructive" data-error="email">
+							{formErrors.email}
+						</p>
 					)}
 				</div>
 
@@ -65,7 +72,9 @@ export default function UsersCreate({ title, errors }: PageProps<typeof usersCre
 						className={cn(formErrors.password && "border-destructive")}
 					/>
 					{formErrors.password && (
-						<p className="text-sm text-destructive" data-error="password">{formErrors.password}</p>
+						<p className="text-sm text-destructive" data-error="password">
+							{formErrors.password}
+						</p>
 					)}
 				</div>
 

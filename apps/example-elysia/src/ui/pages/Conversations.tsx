@@ -1,15 +1,23 @@
 import { useForm } from "@inertiajs/react";
+import type { PageProps } from "inertia-server";
 import { useState } from "react";
+import type { conversationsPage } from "@/inertia";
+import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "../components/ui/card";
 import { Input } from "../components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
-import { CodeBlock } from "../components/CodeBlock";
 import { cn } from "../lib/utils";
-import { PageProps } from "inertia-server";
-import type { conversationsPage } from "@/inertia";
 
-export default function Conversations({ title, conversations }: PageProps<typeof conversationsPage>) {
+export default function Conversations({
+	title,
+	conversations,
+}: PageProps<typeof conversationsPage>) {
 	const [selectedId, setSelectedId] = useState<number | null>(
 		conversations[0]?.id ?? null,
 	);
@@ -20,15 +28,16 @@ export default function Conversations({ title, conversations }: PageProps<typeof
 	return (
 		<Layout title={title}>
 			<p className="mb-6 text-muted-foreground">
-				This demo uses deep merge props. Updates to conversation properties (like title) 
-				merge with existing data instead of replacing it. Try editing a conversation title 
-				or adding messages.
+				This demo uses deep merge props. Updates to conversation properties
+				(like title) merge with existing data instead of replacing it. Try
+				editing a conversation title or adding messages.
 			</p>
 
 			<div className="grid h-[500px] gap-4 lg:grid-cols-[280px_1fr]">
 				<div className="overflow-auto rounded-sm border bg-muted/30">
 					{conversations.map((conversation) => (
 						<button
+							type="button"
 							key={conversation.id}
 							onClick={() => {
 								setSelectedId(conversation.id);
@@ -36,7 +45,7 @@ export default function Conversations({ title, conversations }: PageProps<typeof
 							}}
 							className={cn(
 								"w-full border-b border-border p-4 text-left transition-colors hover:bg-muted/50",
-								selectedId === conversation.id && "bg-muted"
+								selectedId === conversation.id && "bg-muted",
 							)}
 						>
 							<div className="font-medium">{conversation.title}</div>
@@ -55,8 +64,8 @@ export default function Conversations({ title, conversations }: PageProps<typeof
 						<>
 							<CardHeader className="shrink-0 border-b pb-3">
 								{isEditing ? (
-									<EditTitleForm 
-										conversationId={selectedConversation.id} 
+									<EditTitleForm
+										conversationId={selectedConversation.id}
 										currentTitle={selectedConversation.title}
 										onCancel={() => setIsEditing(false)}
 										onSuccess={() => setIsEditing(false)}
@@ -71,8 +80,8 @@ export default function Conversations({ title, conversations }: PageProps<typeof
 												{selectedConversation.participants.join(", ")}
 											</p>
 										</div>
-										<Button 
-											variant="ghost" 
+										<Button
+											variant="ghost"
 											size="sm"
 											onClick={() => setIsEditing(true)}
 										>
@@ -85,9 +94,7 @@ export default function Conversations({ title, conversations }: PageProps<typeof
 							<CardContent className="flex-1 space-y-4 overflow-auto py-4">
 								{selectedConversation.messages.map((message) => (
 									<div key={message.id}>
-										<div className="text-sm font-medium">
-											{message.sender}
-										</div>
+										<div className="text-sm font-medium">{message.sender}</div>
 										<div className="mt-1 rounded-sm bg-muted/50 px-3 py-2 text-sm">
 											{message.text}
 										</div>
@@ -163,13 +170,13 @@ function MessageForm({ conversationId }: { conversationId: number }) {
 	);
 }
 
-function EditTitleForm({ 
-	conversationId, 
-	currentTitle, 
-	onCancel, 
-	onSuccess 
-}: { 
-	conversationId: number; 
+function EditTitleForm({
+	conversationId,
+	currentTitle,
+	onCancel,
+	onSuccess,
+}: {
+	conversationId: number;
 	currentTitle: string;
 	onCancel: () => void;
 	onSuccess: () => void;
@@ -195,7 +202,11 @@ function EditTitleForm({
 				className="flex-1"
 				autoFocus
 			/>
-			<Button type="submit" size="sm" disabled={processing || !data.title.trim()}>
+			<Button
+				type="submit"
+				size="sm"
+				disabled={processing || !data.title.trim()}
+			>
 				Save
 			</Button>
 			<Button type="button" variant="ghost" size="sm" onClick={onCancel}>

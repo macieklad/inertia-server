@@ -1,22 +1,30 @@
 import { useForm } from "@inertiajs/react";
-import { Layout } from "../components/Layout";
+import type { PageProps } from "inertia-server";
+import type { errorBagsPage } from "@/inertia";
+import { CodeBlock } from "../components/CodeBlock";
 import { FlashMessages } from "../components/FlashMessages";
+import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
-import { CodeBlock } from "../components/CodeBlock";
 import { cn } from "../lib/utils";
-import { PageProps } from "inertia-server";
-import type { errorBagsPage } from "@/inertia";
 
-export default function ErrorBagsDemo({ title, errors }: PageProps<typeof errorBagsPage>) {
+export default function ErrorBagsDemo({
+	title,
+	errors,
+}: PageProps<typeof errorBagsPage>) {
 	return (
 		<Layout title={title}>
 			<FlashMessages />
 			<p className="mb-8 text-muted-foreground">
-				This page demonstrates error bags. Each form has its own error bag, 
-				so validation errors from one form don't affect the other.
+				This page demonstrates error bags. Each form has its own error bag, so
+				validation errors from one form don't affect the other.
 			</p>
 
 			<div className="grid gap-6 lg:grid-cols-2">
@@ -57,7 +65,11 @@ errors.register?.name  // undefined`,
 	);
 }
 
-function LoginForm({ errors }: { errors?: { email?: string; password?: string } }) {
+function LoginForm({
+	errors,
+}: {
+	errors?: { email?: string; password?: string };
+}) {
 	const { data, setData, post, processing } = useForm({
 		email: "",
 		password: "",
@@ -71,7 +83,9 @@ function LoginForm({ errors }: { errors?: { email?: string; password?: string } 
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="text-base">Login Form (error bag: login)</CardTitle>
+				<CardTitle className="text-base">
+					Login Form (error bag: login)
+				</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -86,7 +100,9 @@ function LoginForm({ errors }: { errors?: { email?: string; password?: string } 
 							className={cn(errors?.email && "border-destructive")}
 						/>
 						{errors?.email && (
-							<p className="text-sm text-destructive" data-error="login-email">{errors.email}</p>
+							<p className="text-sm text-destructive" data-error="login-email">
+								{errors.email}
+							</p>
 						)}
 					</div>
 
@@ -101,7 +117,12 @@ function LoginForm({ errors }: { errors?: { email?: string; password?: string } 
 							className={cn(errors?.password && "border-destructive")}
 						/>
 						{errors?.password && (
-							<p className="text-sm text-destructive" data-error="login-password">{errors.password}</p>
+							<p
+								className="text-sm text-destructive"
+								data-error="login-password"
+							>
+								{errors.password}
+							</p>
 						)}
 					</div>
 
@@ -114,7 +135,11 @@ function LoginForm({ errors }: { errors?: { email?: string; password?: string } 
 	);
 }
 
-function CreateUserForm({ errors }: { errors?: { name?: string; email?: string; password?: string } }) {
+function CreateUserForm({
+	errors,
+}: {
+	errors?: { name?: string; email?: string; password?: string };
+}) {
 	const { data, setData, post, processing } = useForm({
 		name: "",
 		email: "",
@@ -129,7 +154,9 @@ function CreateUserForm({ errors }: { errors?: { name?: string; email?: string; 
 	return (
 		<Card className="bg-muted/30">
 			<CardHeader>
-				<CardTitle className="text-base">Create User Form (error bag: createUser)</CardTitle>
+				<CardTitle className="text-base">
+					Create User Form (error bag: createUser)
+				</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -144,7 +171,9 @@ function CreateUserForm({ errors }: { errors?: { name?: string; email?: string; 
 							className={cn(errors?.name && "border-destructive")}
 						/>
 						{errors?.name && (
-							<p className="text-sm text-destructive" data-error="create-name">{errors.name}</p>
+							<p className="text-sm text-destructive" data-error="create-name">
+								{errors.name}
+							</p>
 						)}
 					</div>
 
@@ -159,7 +188,9 @@ function CreateUserForm({ errors }: { errors?: { name?: string; email?: string; 
 							className={cn(errors?.email && "border-destructive")}
 						/>
 						{errors?.email && (
-							<p className="text-sm text-destructive" data-error="create-email">{errors.email}</p>
+							<p className="text-sm text-destructive" data-error="create-email">
+								{errors.email}
+							</p>
 						)}
 					</div>
 
@@ -174,7 +205,12 @@ function CreateUserForm({ errors }: { errors?: { name?: string; email?: string; 
 							className={cn(errors?.password && "border-destructive")}
 						/>
 						{errors?.password && (
-							<p className="text-sm text-destructive" data-error="create-password">{errors.password}</p>
+							<p
+								className="text-sm text-destructive"
+								data-error="create-password"
+							>
+								{errors.password}
+							</p>
 						)}
 					</div>
 

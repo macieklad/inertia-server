@@ -1,77 +1,76 @@
 import { router } from "@inertiajs/react";
+import type { PageProps } from "inertia-server";
+import type { postsPage } from "@/inertia";
+import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
+	Card,
+	CardContent,
+	CardFooter,
+	CardHeader,
+	CardTitle,
 } from "../components/ui/card";
-import { CodeBlock } from "../components/CodeBlock";
-import { PageProps } from "inertia-server";
-import type { postsPage } from "@/inertia";
 
 export default function PostsIndex({
-  title,
-  posts,
-  currentPage,
-  totalPages,
-  hasMore,
+	title,
+	posts,
+	currentPage,
+	totalPages,
+	hasMore,
 }: PageProps<typeof postsPage>) {
-  const loadMore = () => {
-    router.reload({
-      data: { page: currentPage + 1 },
-      only: ["posts", "currentPage", "hasMore"],
-    });
-  };
+	const loadMore = () => {
+		router.reload({
+			data: { page: currentPage + 1 },
+			only: ["posts", "currentPage", "hasMore"],
+		});
+	};
 
-  return (
-    <Layout title={title}>
-      <p className="mb-6 text-muted-foreground">
-        Showing {posts.length} posts (page {currentPage} of {totalPages}). Posts
-        use merged props for infinite scroll behavior.
-      </p>
+	return (
+		<Layout title={title}>
+			<p className="mb-6 text-muted-foreground">
+				Showing {posts.length} posts (page {currentPage} of {totalPages}). Posts
+				use merged props for infinite scroll behavior.
+			</p>
 
-      <div className="flex flex-col gap-4">
-        {posts.map((post) => (
-          <Card key={post.id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">{post.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-2">
-              <p className="text-muted-foreground">{post.excerpt}</p>
-            </CardContent>
-            <CardFooter>
-              <p className="text-sm text-muted-foreground">
-                By {post.author} on {post.createdAt}
-              </p>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+			<div className="flex flex-col gap-4">
+				{posts.map((post) => (
+					<Card key={post.id}>
+						<CardHeader className="pb-2">
+							<CardTitle className="text-lg">{post.title}</CardTitle>
+						</CardHeader>
+						<CardContent className="pb-2">
+							<p className="text-muted-foreground">{post.excerpt}</p>
+						</CardContent>
+						<CardFooter>
+							<p className="text-sm text-muted-foreground">
+								By {post.author} on {post.createdAt}
+							</p>
+						</CardFooter>
+					</Card>
+				))}
+			</div>
 
-      {hasMore && (
-        <div className="mt-8 text-center">
-          <Button onClick={loadMore} size="lg">
-            Load More
-          </Button>
-        </div>
-      )}
+			{hasMore && (
+				<div className="mt-8 text-center">
+					<Button onClick={loadMore} size="lg">
+						Load More
+					</Button>
+				</div>
+			)}
 
-      {!hasMore && posts.length > 0 && (
-        <p className="mt-8 text-center text-muted-foreground">
-          You've reached the end!
-        </p>
-      )}
+			{!hasMore && posts.length > 0 && (
+				<p className="mt-8 text-center text-muted-foreground">
+					You've reached the end!
+				</p>
+			)}
 
-      <CodeBlock
-        tabs={[
-          {
-            label: "Server",
-            language: "typescript",
-            code: `export const postsIndexPage = definePage({
+			<CodeBlock
+				tabs={[
+					{
+						label: "Server",
+						language: "typescript",
+						code: `export const postsIndexPage = definePage({
   component: "Posts/Index",
   props: {
     title: prop<string>(),
@@ -80,11 +79,11 @@ export default function PostsIndex({
     hasMore: prop<boolean>(),
   },
 });`,
-          },
-          {
-            label: "Client",
-            language: "tsx",
-            code: `// Load more triggers a partial reload
+					},
+					{
+						label: "Client",
+						language: "tsx",
+						code: `// Load more triggers a partial reload
 const loadMore = () => {
   router.reload({
     data: { page: currentPage + 1 },
@@ -95,9 +94,9 @@ const loadMore = () => {
 // New posts are MERGED with existing posts
 // matchOn: "id" prevents duplicates
 // .scroll() accumulates results for infinite scroll`,
-          },
-        ]}
-      />
-    </Layout>
-  );
+					},
+				]}
+			/>
+		</Layout>
+	);
 }

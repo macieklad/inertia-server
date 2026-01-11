@@ -1,5 +1,5 @@
+import { aboutPage, contactPage, homePage } from "../inertia";
 import { router } from "../router";
-import { homePage, aboutPage, contactPage } from "../inertia";
 
 export const homeRoutes = router
 	.get("/", ({ inertia }) => {

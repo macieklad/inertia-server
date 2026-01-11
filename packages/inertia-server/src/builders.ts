@@ -5,17 +5,17 @@
  */
 
 import type {
-  AnyBuilder,
-  DeepMergeBuilder,
-  DeferredBuilder,
-  DeferredOnceBuilder,
-  MergeBuilder,
-  MergePropOptions,
-  OnceBuilder,
-  OncePropOptions,
-  PropBuilder,
-  PropBuilderState,
-  ScrollPropOptions,
+	AnyBuilder,
+	DeepMergeBuilder,
+	DeferredBuilder,
+	DeferredOnceBuilder,
+	MergeBuilder,
+	MergePropOptions,
+	OnceBuilder,
+	OncePropOptions,
+	PropBuilder,
+	PropBuilderState,
+	ScrollPropOptions,
 } from "./types";
 import { BUILDER_LAZY, BUILDER_STATE, BUILDER_TYPE } from "./types";
 
@@ -36,77 +36,77 @@ import { BUILDER_LAZY, BUILDER_STATE, BUILDER_TYPE } from "./types";
  * ```
  */
 export function prop<T>(): PropBuilder<T> {
-  const meta: PropBuilderState = { type: "prop" };
+	const meta: PropBuilderState = { type: "prop" };
 
-  const createPropBuilder = (currentMeta: PropBuilderState): PropBuilder<T> => {
-    return createBuilder<T, PropBuilder<T>>(
-      currentMeta,
-      {
-        once(opts?: OncePropOptions): OnceBuilder<T> {
-          return createOnceBuilder({
-            ...currentMeta,
-            type: "once",
-            once: opts,
-          });
-        },
-        deferred(group = "default"): DeferredBuilder<T> {
-          const deferredMeta: PropBuilderState = {
-            ...currentMeta,
-            type: "deferred",
-            deferredGroup: group,
-          };
+	const createPropBuilder = (currentMeta: PropBuilderState): PropBuilder<T> => {
+		return createBuilder<T, PropBuilder<T>>(
+			currentMeta,
+			{
+				once(opts?: OncePropOptions): OnceBuilder<T> {
+					return createOnceBuilder({
+						...currentMeta,
+						type: "once",
+						once: opts,
+					});
+				},
+				deferred(group = "default"): DeferredBuilder<T> {
+					const deferredMeta: PropBuilderState = {
+						...currentMeta,
+						type: "deferred",
+						deferredGroup: group,
+					};
 
-          return createBuilder<T, DeferredBuilder<T>>(
-            deferredMeta,
-            {
-              once(opts?: OncePropOptions): DeferredOnceBuilder<T> {
-                return createBuilder<T, DeferredOnceBuilder<T>>(
-                  {
-                    ...deferredMeta,
-                    once: opts,
-                    isDeferredOnce: true,
-                  },
-                  {},
-                  true
-                );
-              },
-            },
-            true
-          );
-        },
-        optional(): PropBuilder<T> {
-          return createPropBuilder({ ...currentMeta, isOptional: true });
-        },
-        always(): PropBuilder<T> {
-          return createPropBuilder({ ...currentMeta, isAlways: true });
-        },
-      },
-      false
-    );
-  };
+					return createBuilder<T, DeferredBuilder<T>>(
+						deferredMeta,
+						{
+							once(opts?: OncePropOptions): DeferredOnceBuilder<T> {
+								return createBuilder<T, DeferredOnceBuilder<T>>(
+									{
+										...deferredMeta,
+										once: opts,
+										isDeferredOnce: true,
+									},
+									{},
+									true,
+								);
+							},
+						},
+						true,
+					);
+				},
+				optional(): PropBuilder<T> {
+					return createPropBuilder({ ...currentMeta, isOptional: true });
+				},
+				always(): PropBuilder<T> {
+					return createPropBuilder({ ...currentMeta, isAlways: true });
+				},
+			},
+			false,
+		);
+	};
 
-  const createOnceBuilder = (currentMeta: PropBuilderState): OnceBuilder<T> => {
-    return createBuilder<T, OnceBuilder<T>>(
-      currentMeta,
-      {
-        deferred(group = "default"): DeferredOnceBuilder<T> {
-          return createBuilder<T, DeferredOnceBuilder<T>>(
-            {
-              ...currentMeta,
-              type: "deferred",
-              deferredGroup: group,
-              isDeferredOnce: true,
-            },
-            {},
-            true
-          );
-        },
-      },
-      true
-    );
-  };
+	const createOnceBuilder = (currentMeta: PropBuilderState): OnceBuilder<T> => {
+		return createBuilder<T, OnceBuilder<T>>(
+			currentMeta,
+			{
+				deferred(group = "default"): DeferredOnceBuilder<T> {
+					return createBuilder<T, DeferredOnceBuilder<T>>(
+						{
+							...currentMeta,
+							type: "deferred",
+							deferredGroup: group,
+							isDeferredOnce: true,
+						},
+						{},
+						true,
+					);
+				},
+			},
+			true,
+		);
+	};
 
-  return createPropBuilder(meta);
+	return createPropBuilder(meta);
 }
 
 /**
@@ -122,42 +122,42 @@ export function prop<T>(): PropBuilder<T> {
  * ```
  */
 export function mergedProp<T>(opts?: MergePropOptions): MergeBuilder<T> {
-  const meta: PropBuilderState = {
-    type: "merge",
-    mergeOptions: opts,
-    mergeDirection: "append",
-  };
+	const meta: PropBuilderState = {
+		type: "merge",
+		mergeOptions: opts,
+		mergeDirection: "append",
+	};
 
-  const createMergeBuilder = (
-    currentMeta: PropBuilderState
-  ): MergeBuilder<T> => {
-    return createBuilder<T, MergeBuilder<T>>(
-      currentMeta,
-      {
-        append(): MergeBuilder<T> {
-          return createMergeBuilder({
-            ...currentMeta,
-            mergeDirection: "append",
-          });
-        },
-        prepend(): MergeBuilder<T> {
-          return createMergeBuilder({
-            ...currentMeta,
-            mergeDirection: "prepend",
-          });
-        },
-        scroll(scrollOpts: ScrollPropOptions): MergeBuilder<T> {
-          return createMergeBuilder({
-            ...currentMeta,
-            scrollOptions: scrollOpts,
-          });
-        },
-      },
-      false
-    );
-  };
+	const createMergeBuilder = (
+		currentMeta: PropBuilderState,
+	): MergeBuilder<T> => {
+		return createBuilder<T, MergeBuilder<T>>(
+			currentMeta,
+			{
+				append(): MergeBuilder<T> {
+					return createMergeBuilder({
+						...currentMeta,
+						mergeDirection: "append",
+					});
+				},
+				prepend(): MergeBuilder<T> {
+					return createMergeBuilder({
+						...currentMeta,
+						mergeDirection: "prepend",
+					});
+				},
+				scroll(scrollOpts: ScrollPropOptions): MergeBuilder<T> {
+					return createMergeBuilder({
+						...currentMeta,
+						scrollOptions: scrollOpts,
+					});
+				},
+			},
+			false,
+		);
+	};
 
-  return createMergeBuilder(meta);
+	return createMergeBuilder(meta);
 }
 
 /**
@@ -173,51 +173,51 @@ export function mergedProp<T>(opts?: MergePropOptions): MergeBuilder<T> {
  * ```
  */
 export function deepMergedProp<T>(
-  opts?: MergePropOptions
+	opts?: MergePropOptions,
 ): DeepMergeBuilder<T> {
-  const meta: PropBuilderState = {
-    type: "deepMerge",
-    mergeOptions: opts,
-    mergeDirection: "append",
-  };
+	const meta: PropBuilderState = {
+		type: "deepMerge",
+		mergeOptions: opts,
+		mergeDirection: "append",
+	};
 
-  const createDeepMergeBuilder = (
-    currentMeta: PropBuilderState
-  ): DeepMergeBuilder<T> => {
-    return createBuilder<T, DeepMergeBuilder<T>>(
-      currentMeta,
-      {
-        append(): DeepMergeBuilder<T> {
-          return createDeepMergeBuilder({
-            ...currentMeta,
-            mergeDirection: "append",
-          });
-        },
-        prepend(): DeepMergeBuilder<T> {
-          return createDeepMergeBuilder({
-            ...currentMeta,
-            mergeDirection: "prepend",
-          });
-        },
-        scroll(scrollOpts: ScrollPropOptions): DeepMergeBuilder<T> {
-          return createDeepMergeBuilder({
-            ...currentMeta,
-            scrollOptions: scrollOpts,
-          });
-        },
-      },
-      false
-    );
-  };
+	const createDeepMergeBuilder = (
+		currentMeta: PropBuilderState,
+	): DeepMergeBuilder<T> => {
+		return createBuilder<T, DeepMergeBuilder<T>>(
+			currentMeta,
+			{
+				append(): DeepMergeBuilder<T> {
+					return createDeepMergeBuilder({
+						...currentMeta,
+						mergeDirection: "append",
+					});
+				},
+				prepend(): DeepMergeBuilder<T> {
+					return createDeepMergeBuilder({
+						...currentMeta,
+						mergeDirection: "prepend",
+					});
+				},
+				scroll(scrollOpts: ScrollPropOptions): DeepMergeBuilder<T> {
+					return createDeepMergeBuilder({
+						...currentMeta,
+						scrollOptions: scrollOpts,
+					});
+				},
+			},
+			false,
+		);
+	};
 
-  return createDeepMergeBuilder(meta);
+	return createDeepMergeBuilder(meta);
 }
 
 /**
  * Type guard to check if a value is an Inertia prop builder.
  */
 export function isBuilder(value: unknown): value is AnyBuilder {
-  return typeof value === "object" && value !== null && BUILDER_STATE in value;
+	return typeof value === "object" && value !== null && BUILDER_STATE in value;
 }
 
 // =============================================================================
@@ -228,17 +228,17 @@ export function isBuilder(value: unknown): value is AnyBuilder {
  * Creates a builder object with the given metadata.
  */
 function createBuilder<T, B extends AnyBuilder<T>>(
-  meta: PropBuilderState,
-  methods: Omit<
-    B,
-    typeof BUILDER_STATE | typeof BUILDER_TYPE | typeof BUILDER_LAZY
-  >,
-  isLazy: boolean
+	meta: PropBuilderState,
+	methods: Omit<
+		B,
+		typeof BUILDER_STATE | typeof BUILDER_TYPE | typeof BUILDER_LAZY
+	>,
+	isLazy: boolean,
 ): B {
-  return {
-    [BUILDER_STATE]: meta,
-    [BUILDER_TYPE]: undefined as T,
-    [BUILDER_LAZY]: isLazy,
-    ...methods,
-  } as B;
+	return {
+		[BUILDER_STATE]: meta,
+		[BUILDER_TYPE]: undefined as T,
+		[BUILDER_LAZY]: isLazy,
+		...methods,
+	} as B;
 }

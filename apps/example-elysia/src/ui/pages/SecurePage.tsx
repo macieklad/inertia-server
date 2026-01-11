@@ -1,13 +1,21 @@
 import { router, usePage } from "@inertiajs/react";
-import { useState, useEffect } from "react";
+import type { PageProps } from "inertia-server";
+import { useEffect, useState } from "react";
+import type { securePage } from "@/inertia";
+import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
-import { CodeBlock } from "../components/CodeBlock";
-import { PageProps } from "inertia-server";
-import type { securePage } from "@/inertia";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "../components/ui/card";
 
-export default function SecurePage({ title, sensitiveData }: PageProps<typeof securePage>) {
+export default function SecurePage({
+	title,
+	sensitiveData,
+}: PageProps<typeof securePage>) {
 	const page = usePage();
 	const [historyLength, setHistoryLength] = useState(0);
 	const [historyState, setHistoryState] = useState<string>("");
@@ -31,12 +39,16 @@ export default function SecurePage({ title, sensitiveData }: PageProps<typeof se
 			<div className="space-y-4">
 				<Card className="border-warning/20 bg-warning/10">
 					<CardHeader className="pb-2">
-						<CardTitle className="text-base">History Encryption Enabled</CardTitle>
+						<CardTitle className="text-base">
+							History Encryption Enabled
+						</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<p className="text-sm">
-							This page has <code className="rounded-sm bg-muted px-1">encryptHistory</code> enabled. 
-							The page state in browser history is encrypted to protect sensitive information.
+							This page has{" "}
+							<code className="rounded-sm bg-muted px-1">encryptHistory</code>{" "}
+							enabled. The page state in browser history is encrypted to protect
+							sensitive information.
 						</p>
 					</CardContent>
 				</Card>
@@ -46,7 +58,9 @@ export default function SecurePage({ title, sensitiveData }: PageProps<typeof se
 						<CardTitle className="text-base">Sensitive Data</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<p className="font-mono text-sm" data-testid="sensitive-data">{sensitiveData}</p>
+						<p className="font-mono text-sm" data-testid="sensitive-data">
+							{sensitiveData}
+						</p>
 					</CardContent>
 				</Card>
 
@@ -57,16 +71,24 @@ export default function SecurePage({ title, sensitiveData }: PageProps<typeof se
 					<CardContent className="space-y-3">
 						<div className="flex items-center gap-4 text-sm">
 							<span className="text-muted-foreground">History length:</span>
-							<code className="rounded-sm bg-muted px-2 py-0.5">{historyLength}</code>
+							<code className="rounded-sm bg-muted px-2 py-0.5">
+								{historyLength}
+							</code>
 						</div>
 						<div className="flex items-center gap-4 text-sm">
 							<span className="text-muted-foreground">encryptHistory:</span>
 							<code className="rounded-sm bg-muted px-2 py-0.5">
-								{String((page.props as Record<string, unknown>).encryptHistory ?? page.encryptHistory ?? "undefined")}
+								{String(
+									(page.props as Record<string, unknown>).encryptHistory ??
+										page.encryptHistory ??
+										"undefined",
+								)}
 							</code>
 						</div>
 						<div>
-							<p className="mb-2 text-sm text-muted-foreground">History state (encrypted data not visible):</p>
+							<p className="mb-2 text-sm text-muted-foreground">
+								History state (encrypted data not visible):
+							</p>
 							<pre className="max-h-48 overflow-auto rounded-sm bg-muted p-3 text-xs">
 								{historyState}
 							</pre>
@@ -80,8 +102,8 @@ export default function SecurePage({ title, sensitiveData }: PageProps<typeof se
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<p className="text-sm">
-							Clicking logout will clear all encrypted history entries, ensuring sensitive data 
-							cannot be accessed via browser back button.
+							Clicking logout will clear all encrypted history entries, ensuring
+							sensitive data cannot be accessed via browser back button.
 						</p>
 						<Button variant="destructive" onClick={handleLogout}>
 							Logout & Clear History
@@ -92,10 +114,15 @@ export default function SecurePage({ title, sensitiveData }: PageProps<typeof se
 				<div className="text-sm text-muted-foreground">
 					<p className="mb-2 font-medium text-foreground">How it works:</p>
 					<ul className="space-y-1 pl-4">
-						<li>- Page state is encrypted before being stored in browser history</li>
+						<li>
+							- Page state is encrypted before being stored in browser history
+						</li>
 						<li>- Encryption key is stored in sessionStorage</li>
 						<li>- Clearing history removes all encrypted entries</li>
-						<li>- Useful for pages with sensitive user data (account info, financial data, etc.)</li>
+						<li>
+							- Useful for pages with sensitive user data (account info,
+							financial data, etc.)
+						</li>
 					</ul>
 				</div>
 

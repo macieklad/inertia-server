@@ -23,8 +23,15 @@ export default function Root({ page, manifest }: RootProps) {
 				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 				<title>Inertia Server Example</title>
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
-				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-				<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet" />
+				<link
+					rel="preconnect"
+					href="https://fonts.gstatic.com"
+					crossOrigin="anonymous"
+				/>
+				<link
+					href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap"
+					rel="stylesheet"
+				/>
 				{cssFiles.map((css) => (
 					<link key={css} rel="stylesheet" href={`/assets/${css}`} />
 				))}
@@ -44,7 +51,10 @@ export default function Root({ page, manifest }: RootProps) {
 	);
 }
 
-export function renderToHtml(page: InertiaPage, manifest: Manifest | null): string {
+export function renderToHtml(
+	page: InertiaPage,
+	manifest: Manifest | null,
+): string {
 	const { renderToString } = require("react-dom/server");
 	return `<!DOCTYPE html>${renderToString(<Root page={page} manifest={manifest} />)}`;
 }

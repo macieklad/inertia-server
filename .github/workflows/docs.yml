@@ -1,0 +1,23 @@
+name: Deploy Docs
+
+on:
+  repository_dispatch:
+    types: [docs-deploy]
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths:
+      - 'apps/docs/**'
+
+jobs:
+  deploy:
+    name: Deploy to Mintlify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger Mintlify Deploy
+        run: |
+          echo "Mintlify automatically deploys from the repository."
+          echo "If you need manual deployment, configure Mintlify webhook or use their CLI."
+          echo "See: https://mintlify.com/docs/settings/ci-cd"

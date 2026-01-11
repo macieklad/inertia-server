@@ -1,7 +1,9 @@
 import { Link, router } from "@inertiajs/react";
+import type { PageProps } from "inertia-server";
 import { useState } from "react";
-import { Layout } from "../../components/Layout";
+import type { usersIndexPage } from "@/inertia";
 import { FlashMessages } from "../../components/FlashMessages";
+import { Layout } from "../../components/Layout";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import {
@@ -12,15 +14,23 @@ import {
 	TableHeader,
 	TableRow,
 } from "../../components/ui/table";
-import { PageProps } from "inertia-server";
-import type { usersIndexPage } from "@/inertia";
 
-export default function UsersIndex({ title, users, search, page, totalPages }: PageProps<typeof usersIndexPage>) {
+export default function UsersIndex({
+	title,
+	users,
+	search,
+	page,
+	totalPages,
+}: PageProps<typeof usersIndexPage>) {
 	const [searchValue, setSearchValue] = useState(search);
 
 	const handleSearch = (e: React.FormEvent) => {
 		e.preventDefault();
-		router.get("/users", { search: searchValue, page: 1 }, { preserveState: true, replace: false });
+		router.get(
+			"/users",
+			{ search: searchValue, page: 1 },
+			{ preserveState: true, replace: false },
+		);
 	};
 
 	return (
@@ -62,7 +72,9 @@ export default function UsersIndex({ title, users, search, page, totalPages }: P
 								<TableCell className="font-medium">{user.name}</TableCell>
 								<TableCell>{user.email}</TableCell>
 								<TableCell>{user.role}</TableCell>
-								<TableCell className="text-muted-foreground">{user.createdAt}</TableCell>
+								<TableCell className="text-muted-foreground">
+									{user.createdAt}
+								</TableCell>
 								<TableCell className="text-right">
 									<div className="flex items-center justify-end gap-2">
 										<Button variant="ghost" size="sm" asChild>

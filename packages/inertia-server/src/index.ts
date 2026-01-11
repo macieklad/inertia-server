@@ -9,6 +9,7 @@ import {
 	getRedirectStatus,
 } from "./response";
 import {
+	BUILDER_STATE,
 	type CreateHelperFn,
 	type CreateInertiaConfig,
 	type DefinePageFn,
@@ -16,22 +17,36 @@ import {
 	type InertiaHelper,
 	type InertiaPage,
 	type InertiaPageContext,
+	type InertiaPageDefinition,
 	type InertiaPageOnceProps,
 	type InertiaPageScrollProps,
 	type InertiaRequestOptions,
-	type InertiaPageDefinition,
 	type PageDefinitionFnOptions,
 	type PagePropsSchema,
 	type PagePropsValues,
 	type PropBuilderState,
 	type SharedPageProps,
-	BUILDER_STATE,
 } from "./types";
 
 // =============================================================================
 // Re-exports
 // =============================================================================
 
+// Builders
+export { deepMergedProp, isBuilder, mergedProp, prop } from "./builders";
+// Headers
+export { parseInertiaHeaders } from "./headers";
+// Response utilities
+export {
+	checkVersionMatch,
+	createDataPageAttribute,
+	createExternalRedirectResponse,
+	createHtmlResponse,
+	createJsonResponse,
+	createRedirectResponse,
+	createVersionConflictResponse,
+	getRedirectStatus,
+} from "./response";
 // Types
 export type {
 	AnyBuilder,
@@ -46,37 +61,18 @@ export type {
 	DefinePageFnOptions as DefinePageOptions,
 	InertiaHelper,
 	InertiaPage,
+	InertiaPageContext,
+	InertiaPageDefinition as PageDefinition,
 	InertiaRequestOptions,
 	InertiaRequestOptions as InertiaRequestHeaders,
 	MergeBuilder,
 	OnceBuilder,
-	InertiaPageDefinition as PageDefinition,
 	PageDefinitionFnOptions as PageRenderOptions,
+	PageProps,
 	PagePropsSchema,
 	PagePropsValues,
-	InertiaPageContext,
 	PropBuilder,
 } from "./types";
-
-export type { PageProps } from "./types";
-
-// Builders
-export { deepMergedProp, isBuilder, mergedProp, prop } from "./builders";
-
-// Headers
-export { parseInertiaHeaders } from "./headers";
-
-// Response utilities
-export {
-	checkVersionMatch,
-	createDataPageAttribute,
-	createExternalRedirectResponse,
-	createHtmlResponse,
-	createJsonResponse,
-	createRedirectResponse,
-	createVersionConflictResponse,
-	getRedirectStatus,
-} from "./response";
 
 // =============================================================================
 // Inertia Factory
@@ -320,8 +316,6 @@ async function resolvePageProps(
 		);
 
 		if (shouldInclude) {
-			// All props can be either a literal value or a resolver function.
-			// If a function is provided, call it to get the resolved value.
 			const resolvedValue =
 				typeof value === "function"
 					? await (value as () => unknown | Promise<unknown>)()

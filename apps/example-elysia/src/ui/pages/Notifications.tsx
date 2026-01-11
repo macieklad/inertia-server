@@ -1,12 +1,12 @@
 import { router } from "@inertiajs/react";
-import { Layout } from "../components/Layout";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Card, CardContent } from "../components/ui/card";
-import { CodeBlock } from "../components/CodeBlock";
-import { cn } from "../lib/utils";
-import { PageProps } from "inertia-server";
+import type { PageProps } from "inertia-server";
 import type { notificationsPage } from "@/inertia";
+import { CodeBlock } from "../components/CodeBlock";
+import { Layout } from "../components/Layout";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import { cn } from "../lib/utils";
 
 const typeVariants = {
 	info: "info",
@@ -22,7 +22,10 @@ const typeBorderClasses = {
 	error: "border-l-destructive",
 } as const;
 
-export default function Notifications({ title, notifications }: PageProps<typeof notificationsPage>) {
+export default function Notifications({
+	title,
+	notifications,
+}: PageProps<typeof notificationsPage>) {
 	const addNotification = () => {
 		router.post("/notifications");
 	};
@@ -30,7 +33,8 @@ export default function Notifications({ title, notifications }: PageProps<typeof
 	return (
 		<Layout title={title}>
 			<p className="mb-6 text-muted-foreground">
-				New notifications are prepended to the list using merged props with prepend direction.
+				New notifications are prepended to the list using merged props with
+				prepend direction.
 			</p>
 
 			<Button variant="success" onClick={addNotification} className="mb-6">

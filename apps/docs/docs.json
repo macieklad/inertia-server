@@ -1,40 +1,40 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "Inertia Server",
-  "theme": "linden",
-  "colors": {
-    "primary": "#2563eb",
-    "light": "#2563eb",
-    "dark": "#2563eb"
-  },
-  "logo": {
-    "dark": "/assets/logo/dark.svg",
-    "light": "/assets/logo/light.svg"
-  },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "pages": [
-      {
-        "group": "Getting Started",
-        "pages": [
-          "getting-started/introduction",
-          "getting-started/quickstart",
-          "getting-started/installation"
-        ]
-      },
-      {
-        "group": "The Basics",
-        "pages": ["basics/responses", "basics/pages", "basics/configuration"]
-      },
-      {
-        "group": "Integrations",
-        "pages": [
-          "integrations/sessions",
-          "integrations/ssr",
-          "integrations/bundling",
-          "integrations/elysia"
-        ]
-      }
-    ]
-  }
+	"$schema": "https://mintlify.com/docs.json",
+	"name": "Inertia Server",
+	"theme": "linden",
+	"colors": {
+		"primary": "#2563eb",
+		"light": "#2563eb",
+		"dark": "#2563eb"
+	},
+	"logo": {
+		"dark": "/assets/logo/dark.svg",
+		"light": "/assets/logo/light.svg"
+	},
+	"favicon": "/favicon.svg",
+	"navigation": {
+		"pages": [
+			{
+				"group": "Getting Started",
+				"pages": [
+					"getting-started/introduction",
+					"getting-started/quickstart",
+					"getting-started/installation"
+				]
+			},
+			{
+				"group": "The Basics",
+				"pages": ["basics/responses", "basics/pages", "basics/configuration"]
+			},
+			{
+				"group": "Integrations",
+				"pages": [
+					"integrations/sessions",
+					"integrations/ssr",
+					"integrations/bundling",
+					"integrations/elysia"
+				]
+			}
+		]
+	}
 }

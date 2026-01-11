@@ -1,12 +1,12 @@
 import { Elysia } from "elysia";
-import { homeRoutes } from "./routes/home";
-import { usersRoutes } from "./routes/users";
-import { propsRoutes } from "./routes/props";
-import { listsRoutes } from "./routes/lists";
 import { advancedRoutes } from "./routes/advanced";
+import { homeRoutes } from "./routes/home";
+import { listsRoutes } from "./routes/lists";
+import { propsRoutes } from "./routes/props";
+import { usersRoutes } from "./routes/users";
 
 const IS_PROD = process.env.NODE_ENV === "production";
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 const app = new Elysia();
 

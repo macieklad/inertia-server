@@ -1,15 +1,18 @@
 import { useForm } from "@inertiajs/react";
-import { Layout } from "../components/Layout";
+import type { PageProps } from "inertia-server";
+import type { contactPage } from "@/inertia";
 import { FlashMessages } from "../components/FlashMessages";
+import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 import { cn } from "../lib/utils";
-import { PageProps } from "inertia-server";
-import type { contactPage } from "@/inertia";
 
-export default function Contact({ title, errors }: PageProps<typeof contactPage>) {
+export default function Contact({
+	title,
+	errors,
+}: PageProps<typeof contactPage>) {
 	const { data, setData, post, processing } = useForm({
 		name: "",
 		email: "",
@@ -38,7 +41,9 @@ export default function Contact({ title, errors }: PageProps<typeof contactPage>
 						className={cn(contactErrors.name && "border-destructive")}
 					/>
 					{contactErrors.name && (
-						<p className="text-sm text-destructive" data-error="name">{contactErrors.name}</p>
+						<p className="text-sm text-destructive" data-error="name">
+							{contactErrors.name}
+						</p>
 					)}
 				</div>
 
@@ -53,7 +58,9 @@ export default function Contact({ title, errors }: PageProps<typeof contactPage>
 						className={cn(contactErrors.email && "border-destructive")}
 					/>
 					{contactErrors.email && (
-						<p className="text-sm text-destructive" data-error="email">{contactErrors.email}</p>
+						<p className="text-sm text-destructive" data-error="email">
+							{contactErrors.email}
+						</p>
 					)}
 				</div>
 
@@ -68,7 +75,9 @@ export default function Contact({ title, errors }: PageProps<typeof contactPage>
 						className={cn(contactErrors.message && "border-destructive")}
 					/>
 					{contactErrors.message && (
-						<p className="text-sm text-destructive" data-error="message">{contactErrors.message}</p>
+						<p className="text-sm text-destructive" data-error="message">
+							{contactErrors.message}
+						</p>
 					)}
 				</div>
 

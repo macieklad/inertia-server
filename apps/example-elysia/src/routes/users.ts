@@ -1,17 +1,13 @@
-import { router } from "../router";
-import {
-	usersIndexPage,
-	usersCreatePage,
-	usersEditPage,
-} from "../inertia";
 import { users } from "../db";
+import { usersCreatePage, usersEditPage, usersIndexPage } from "../inertia";
+import { router } from "../router";
 
 const ITEMS_PER_PAGE = 5;
 
 export const usersRoutes = router
 	.get("/users", ({ inertia, query }) => {
 		const search = (query.search as string) || "";
-		const page = parseInt(query.page as string) || 1;
+		const page = parseInt(query.page as string, 10) || 1;
 
 		const result = users.getAll(search || undefined, page, ITEMS_PER_PAGE);
 		const totalPages = Math.ceil(result.total / ITEMS_PER_PAGE);
@@ -42,7 +38,8 @@ export const usersRoutes = router
 
 		const errors: Record<string, string> = {};
 
-		if (!name || name.trim().length < 2) {
+		const trimmedName = name?.trim() ?? "";
+		if (trimmedName.length < 2) {
 			errors.name = "Name must be at least 2 characters";
 		}
 		if (!email || !email.includes("@")) {
@@ -59,12 +56,12 @@ export const usersRoutes = router
 			return inertia.redirect("/users/create");
 		}
 
-		users.create(name!.trim(), email!, "User");
+		users.create(trimmedName, email as string, "User");
 		inertia.flash("success", "User created successfully!");
 		return inertia.redirect("/users");
 	})
 	.get("/users/:id/edit", ({ inertia, params }) => {
-		const user = users.getById(parseInt(params.id));
+		const user = users.getById(parseInt(params.id, 10));
 		if (!user) {
 			inertia.flash("error", "User not found");
 			return inertia.redirect("/users");
@@ -78,12 +75,13 @@ export const usersRoutes = router
 		);
 	})
 	.put("/users/:id", ({ inertia, params, body }) => {
-		const id = parseInt(params.id);
+		const id = parseInt(params.id, 10);
 		const { name, email } = body as { name?: string; email?: string };
 
 		const errors: Record<string, string> = {};
 
-		if (!name || name.trim().length < 2) {
+		const trimmedName = name?.trim() ?? "";
+		if (trimmedName.length < 2) {
 			errors.name = "Name must be at least 2 characters";
 		}
 		if (!email || !email.includes("@")) {
@@ -97,12 +95,12 @@ export const usersRoutes = router
 			return inertia.redirect(`/users/${id}/edit`);
 		}
 
-		users.update(id, name!.trim(), email!);
+		users.update(id, trimmedName, email as string);
 		inertia.flash("success", "User updated successfully!");
 		return inertia.redirect("/users");
 	})
 	.delete("/users/:id", ({ inertia, params }) => {
-		const id = parseInt(params.id);
+		const id = parseInt(params.id, 10);
 		const user = users.getById(id);
 
 		if (user) {

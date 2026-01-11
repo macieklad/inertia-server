@@ -1,13 +1,11 @@
-import { Layout } from "../components/Layout";
-import { PageProps } from "inertia-server";
+import type { PageProps } from "inertia-server";
 import type { aboutPage } from "@/inertia";
+import { Layout } from "../components/Layout";
 
 export default function About({ title, content }: PageProps<typeof aboutPage>) {
 	return (
 		<Layout title={title}>
-			<p className="text-lg leading-relaxed text-muted-foreground">
-				{content}
-			</p>
+			<p className="text-lg leading-relaxed text-muted-foreground">{content}</p>
 
 			<h2 className="mb-4 mt-8 text-xl font-semibold">Key Features</h2>
 			<ul className="space-y-2 text-muted-foreground">

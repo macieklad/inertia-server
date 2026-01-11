@@ -1,22 +1,33 @@
 import { router } from "@inertiajs/react";
+import type { PageProps } from "inertia-server";
+import type { alwaysPage } from "@/inertia";
+import { CodeBlock } from "../components/CodeBlock";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
-import { CodeBlock } from "../components/CodeBlock";
-import { PageProps } from "inertia-server";
-import type { alwaysPage } from "@/inertia";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "../components/ui/card";
 
-export default function AlwaysPropsDemo({ title, regularData, authData }: PageProps<typeof alwaysPage>) {
+export default function AlwaysPropsDemo({
+	title,
+	regularData,
+	authData,
+}: PageProps<typeof alwaysPage>) {
 	const reloadRegularOnly = () => {
 		router.reload({ only: ["regularData"] });
 	};
 
 	return (
 		<Layout title={title}>
-			<h1 data-testid="page-title" className="sr-only">{title}</h1>
+			<h1 data-testid="page-title" className="sr-only">
+				{title}
+			</h1>
 			<p className="mb-8 text-muted-foreground">
-				Always props are included even in partial reloads that don't request them. 
-				Try the partial reload button - auth data will still be included.
+				Always props are included even in partial reloads that don't request
+				them. Try the partial reload button - auth data will still be included.
 			</p>
 
 			<div className="mb-6 grid gap-4 sm:grid-cols-2">
@@ -44,19 +55,19 @@ export default function AlwaysPropsDemo({ title, regularData, authData }: PagePr
 						</p>
 						<p>
 							<span className="font-medium">Last checked:</span>{" "}
-							<span data-testid="auth-last-checked">{authData.lastChecked}</span>
+							<span data-testid="auth-last-checked">
+								{authData.lastChecked}
+							</span>
 						</p>
 					</CardContent>
 				</Card>
 			</div>
 
-			<Button onClick={reloadRegularOnly}>
-				Partial Reload
-			</Button>
+			<Button onClick={reloadRegularOnly}>Partial Reload</Button>
 
 			<p className="mt-4 text-sm text-muted-foreground">
-				Note: Even though we only request "regularData", the authData will still be included 
-				because it's marked as "always".
+				Note: Even though we only request "regularData", the authData will still
+				be included because it's marked as "always".
 			</p>
 
 			<CodeBlock

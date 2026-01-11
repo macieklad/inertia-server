@@ -1,14 +1,18 @@
-import { useForm, Link } from "@inertiajs/react";
+import { Link, useForm } from "@inertiajs/react";
+import type { PageProps } from "inertia-server";
+import type { usersEditPage } from "@/inertia";
 import { Layout } from "../../components/Layout";
 import { Button } from "../../components/ui/button";
+import { Card, CardContent } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { Card, CardContent } from "../../components/ui/card";
 import { cn } from "../../lib/utils";
-import { PageProps } from "inertia-server";
-import type { usersEditPage } from "@/inertia";
 
-export default function UsersEdit({ title, user, errors }: PageProps<typeof usersEditPage>) {
+export default function UsersEdit({
+	title,
+	user,
+	errors,
+}: PageProps<typeof usersEditPage>) {
 	const { data, setData, put, processing } = useForm({
 		name: user.name,
 		email: user.email,
@@ -33,7 +37,9 @@ export default function UsersEdit({ title, user, errors }: PageProps<typeof user
 						className={cn(errors.name && "border-destructive")}
 					/>
 					{errors.name && (
-						<p className="text-sm text-destructive" data-error="name">{errors.name}</p>
+						<p className="text-sm text-destructive" data-error="name">
+							{errors.name}
+						</p>
 					)}
 				</div>
 
@@ -48,7 +54,9 @@ export default function UsersEdit({ title, user, errors }: PageProps<typeof user
 						className={cn(errors.email && "border-destructive")}
 					/>
 					{errors.email && (
-						<p className="text-sm text-destructive" data-error="email">{errors.email}</p>
+						<p className="text-sm text-destructive" data-error="email">
+							{errors.email}
+						</p>
 					)}
 				</div>
 

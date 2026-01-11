@@ -18,9 +18,7 @@ const navGroups = [
 	},
 	{
 		label: "CRUD",
-		links: [
-			{ href: "/users", label: "Users" },
-		],
+		links: [{ href: "/users", label: "Users" }],
 	},
 	{
 		label: "Props",
@@ -70,10 +68,13 @@ export function Layout({ children, title }: LayoutProps) {
 							</div>
 							<div className="space-y-1">
 								{group.links.map((link) => (
-									<NavLink 
-										key={link.href} 
-										href={link.href} 
-										active={url === link.href || (link.href !== "/" && url.startsWith(link.href))}
+									<NavLink
+										key={link.href}
+										href={link.href}
+										active={
+											url === link.href ||
+											(link.href !== "/" && url.startsWith(link.href))
+										}
 									>
 										{link.label}
 									</NavLink>
@@ -83,9 +84,7 @@ export function Layout({ children, title }: LayoutProps) {
 					))}
 				</nav>
 				<div className="border-t p-4">
-					<div className="text-xs text-muted-foreground">
-						Demo Application
-					</div>
+					<div className="text-xs text-muted-foreground">Demo Application</div>
 				</div>
 			</aside>
 			<main className="flex-1 overflow-auto">
@@ -98,15 +97,23 @@ export function Layout({ children, title }: LayoutProps) {
 	);
 }
 
-function NavLink({ href, children, active }: { href: string; children: ReactNode; active?: boolean }) {
+function NavLink({
+	href,
+	children,
+	active,
+}: {
+	href: string;
+	children: ReactNode;
+	active?: boolean;
+}) {
 	return (
 		<Link
 			href={href}
 			className={cn(
 				"block rounded-sm px-3 py-1.5 text-sm no-underline transition-colors",
-				active 
-					? "bg-brand/10 font-medium text-brand" 
-					: "text-muted-foreground hover:bg-muted hover:text-foreground"
+				active
+					? "bg-brand/10 font-medium text-brand"
+					: "text-muted-foreground hover:bg-muted hover:text-foreground",
 			)}
 		>
 			{children}
