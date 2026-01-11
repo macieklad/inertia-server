@@ -142,8 +142,8 @@ export type Post = {
   createdAt: string;
 };
 
-export const postsIndexPage = definePage({
-  component: "Posts/Index",
+export const postsPage = definePage({
+  component: "Posts",
   props: {
     title: prop<string>(),
     posts: mergedProp<Post[]>({ matchOn: "id" }).scroll({ pageName: "page" }),

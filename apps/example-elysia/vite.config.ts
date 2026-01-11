@@ -3,7 +3,13 @@ import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+	base: command === "serve" ? "/vite/" : "/assets/",
+	server: {
+		hmr: {
+			path: "/",
+		},
+	},
 	build: {
 		outDir: "dist/client",
 		manifest: true,
@@ -13,4 +19,4 @@ export default defineConfig({
 		},
 	},
 	plugins: [react(), tsconfigPaths(), tailwindcss()],
-});
+}));

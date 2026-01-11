@@ -1,10 +1,17 @@
 import { router } from "@inertiajs/react";
-import { Layout } from "../../components/Layout";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../../components/ui/card";
-import { CodeBlock } from "../../components/CodeBlock";
+import { Layout } from "../components/Layout";
+import { Button } from "../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "../components/ui/card";
+import { CodeBlock } from "../components/CodeBlock";
 import { PageProps } from "inertia-server";
-import type { postsIndexPage } from "@/inertia";
+import type { postsPage } from "@/inertia";
 
 export default function PostsIndex({
   title,
@@ -12,7 +19,7 @@ export default function PostsIndex({
   currentPage,
   totalPages,
   hasMore,
-}: PageProps<typeof postsIndexPage>) {
+}: PageProps<typeof postsPage>) {
   const loadMore = () => {
     router.reload({
       data: { page: currentPage + 1 },
