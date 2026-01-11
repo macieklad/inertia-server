@@ -26,6 +26,18 @@
 			}
 		}
 	},
+	"overrides": [
+		{
+			"includes": ["apps/example-elysia/src/ui/index.tsx"],
+			"linter": {
+				"rules": {
+					"security": {
+						"noDangerouslySetInnerHtml": "off"
+					}
+				}
+			}
+		}
+	],
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",

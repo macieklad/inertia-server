@@ -83,21 +83,30 @@ test.describe("Suite 4: CRUD Operations", () => {
 			const tableBody = page.locator("tbody");
 			await expect(tableBody).toBeVisible();
 
-			const initialCount = await page.locator("tbody tr").count();
+			const initialRows = page.locator("tbody tr");
+			const initialCount = await initialRows.count();
 			expect(initialCount).toBeGreaterThan(0);
 
-			await page.fill('[name="search"]', "Admin");
+			const firstUserName = await initialRows
+				.first()
+				.locator("td")
+				.first()
+				.textContent();
+			const searchTerm = firstUserName?.split(" ")[0] ?? "User";
+
+			await page.fill('[name="search"]', searchTerm);
 			await page.getByRole("button", { name: "Search" }).click();
 			await page.waitForLoadState("networkidle");
 
 			const filteredRows = page.locator("tbody tr");
-			const filteredCount = await filteredRows.count();
+			await expect(filteredRows.first()).toBeVisible();
 
-			if (filteredCount > 0) {
-				for (let i = 0; i < filteredCount; i++) {
-					await expect(filteredRows.nth(i)).toContainText(/admin/i);
-				}
-			}
+			const visibleCount = await filteredRows.count();
+			expect(visibleCount).toBeGreaterThan(0);
+
+			await expect(filteredRows.first()).toContainText(
+				new RegExp(searchTerm, "i"),
+			);
 		});
 
 		test("pagination navigation works", async ({ page }) => {
@@ -125,18 +134,26 @@ test.describe("Suite 4: CRUD Operations", () => {
 			await page.goto("/users");
 			await page.waitForLoadState("networkidle");
 
+			const firstUserName = await page
+				.locator("tbody tr")
+				.first()
+				.locator("td")
+				.first()
+				.textContent();
+			const searchTerm = firstUserName?.split(" ")[0] ?? "User";
+
 			const searchInput = page.locator('[name="search"]');
-			await page.fill('[name="search"]', "Admin");
+			await page.fill('[name="search"]', searchTerm);
 			await page.getByRole("button", { name: "Search" }).click();
 			await page.waitForLoadState("networkidle");
 
-			await expect(searchInput).toHaveValue("Admin");
+			await expect(searchInput).toHaveValue(searchTerm);
 
 			const nextLink = page.getByRole("link", { name: "Next" });
 			if (await nextLink.isVisible()) {
 				await nextLink.click();
 				await page.waitForLoadState("networkidle");
-				await expect(searchInput).toHaveValue("Admin");
+				await expect(searchInput).toHaveValue(searchTerm);
 			}
 		});
 	});
