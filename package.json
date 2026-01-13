@@ -13,9 +13,9 @@
 	"scripts": {
 		"dev": "FORCE_COLOR=1 bun --elide-lines 0 --filter example-elysia dev",
 		"dev:docs": "bun --elide-lines 0 --filter docs dev",
-		"build": "bun --elide-lines 0 --filter inertia-server build",
-		"test": "bun --elide-lines 0 --filter inertia-server test",
-		"test:e2e": "bun --elide-lines 0 --filter example-elysia test:e2e",
+		"build": "bun --filter inertia-server build",
+		"test": "bun --filter inertia-server test",
+		"test:e2e": "bun --filter example-elysia test:e2e",
 		"typecheck": "tsc --build",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
