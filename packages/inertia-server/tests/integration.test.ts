@@ -6,7 +6,6 @@ import { createInertia, mergedProp, prop } from "../src/index";
 import { inertia } from "../src/testing";
 import type { FlashAdapter, InertiaPage } from "../src/types";
 
-// Simple HTML renderer for testing
 const renderPage = (page: InertiaPage) => {
 	return `<!DOCTYPE html>
 <html>
@@ -17,136 +16,260 @@ const renderPage = (page: InertiaPage) => {
 </html>`;
 };
 
-// Helper to create inertia with the new API
-function createInertiaWithAdapter(config: {
-	version: string;
-	render: (page: InertiaPage) => string;
-	encryptHistory?: boolean;
-}) {
-	const { definePage, createHelper } = createInertia(config);
-	const plugin = elysiaAdapter(createHelper);
-	return { plugin, definePage, createHelper };
-}
+const defaultInertia = createInertia({ version: "1.0.0", render: renderPage });
+const defaultPlugin = elysiaAdapter(defaultInertia.createHelper);
+const { definePage } = defaultInertia;
 
-// Create test app with inertia using adapter API
-function createTestApp() {
-	const { definePage, createHelper } = createInertia({
-		version: "1.0.0",
-		render: renderPage,
-	});
-	const plugin = elysiaAdapter(createHelper);
+const encryptedInertia = createInertia({
+	version: "1.0.0",
+	render: renderPage,
+	encryptHistory: true,
+});
+const encryptedPlugin = elysiaAdapter(encryptedInertia.createHelper);
 
-	const homePage = definePage({
+const pages = {
+	home: definePage({
 		component: "Home",
-		props: {
-			title: prop<string>(),
-			appName: prop<string>(),
-		},
-	});
-
-	const usersPage = definePage({
+		props: { title: prop<string>(), appName: prop<string>() },
+	}),
+	users: definePage({
 		component: "Users/Index",
 		props: {
-			users: prop<{ id: number; name: string }[]>(),
-			appName: prop<string>(),
+			users: prop<string[]>(),
+			companies: prop<string[]>(),
+			roles: prop<string[]>(),
 		},
-	});
+	}),
+	post: definePage({
+		component: "Post/Show",
+		props: { title: prop<string>(), comments: prop<string[]>().deferred() },
+	}),
+	plans: definePage({
+		component: "Plans/Index",
+		props: { title: prop<string>(), plans: prop<string[]>().once() },
+	}),
+	dashboard: definePage({
+		component: "Dashboard",
+		props: {
+			title: prop<string>(),
+			heavyData: prop<string[]>().optional(),
+			auth: prop<{ user: string }>().always(),
+			data: prop<string[]>(),
+		},
+	}),
+	testTitle: definePage({
+		component: "Test",
+		props: { title: prop<string>() },
+	}),
+	testExpensive: definePage({
+		component: "Test",
+		props: { title: prop<string>(), expensive: prop<string>() },
+	}),
+	testData: definePage({
+		component: "Test",
+		props: { data: prop<string>() },
+	}),
+	testConfig: definePage({
+		component: "Test",
+		props: { config: prop<string[]>().once() },
+	}),
+	testItems: definePage({
+		component: "Test",
+		props: { items: mergedProp<{ id: number }[]>({ matchOn: "id" }) },
+	}),
+	form: definePage({
+		component: "Form",
+		props: { title: prop<string>() },
+	}),
+	posts: definePage({
+		component: "Posts/Index",
+		props: { posts: mergedProp<{ id: number }[]>({ matchOn: "id" }) },
+	}),
+	plansWithExpiry: definePage({
+		component: "Plans/Index",
+		props: { plans: prop<string[]>().once({ expiresAt: 123456789 }) },
+	}),
+	postWithSidebar: definePage({
+		component: "Post/Show",
+		props: {
+			title: prop<string>(),
+			comments: prop<{ id: number }[]>().deferred("sidebar"),
+		},
+	}),
+	about: definePage({
+		component: "About/Team",
+		props: { members: prop<string[]>() },
+	}),
+	postSimple: definePage({
+		component: "Post/Show",
+		props: { title: prop<string>() },
+	}),
+	secret: encryptedInertia.definePage({
+		component: "Secret",
+		props: { data: prop<string>() },
+	}),
+	logout: definePage({
+		component: "Logout",
+		props: { message: prop<string>() },
+	}),
+	testDeferred: definePage({
+		component: "Test",
+		props: { title: prop<string>(), comments: prop<string[]>().deferred() },
+	}),
+};
 
-	return new Elysia()
-		.use(plugin)
-		.get("/", ({ inertia }) => {
-			return inertia.render(
-				homePage({ title: "Welcome", appName: "Test App" }),
-			);
-		})
-		.get("/users", ({ inertia }) => {
-			return inertia.render(
-				usersPage({
-					users: [{ id: 1, name: "John" }],
-					appName: "Test App",
-				}),
-			);
-		})
-		.post("/users", ({ inertia }) => {
-			return inertia.redirect("/users");
-		})
-		.get("/external", ({ inertia }) => {
-			return inertia.location("https://example.com");
-		});
-}
+const app = new Elysia()
+	.use(defaultPlugin)
+	.get("/", ({ inertia }) =>
+		inertia.render(pages.home({ title: "Welcome", appName: "Test App" })),
+	)
+	.get("/users", ({ inertia }) =>
+		inertia.render(
+			pages.users({
+				users: ["Alice", "Bob"],
+				companies: ["Acme", "Corp"],
+				roles: ["admin", "user"],
+			}),
+		),
+	)
+	.post("/users", ({ inertia }) => inertia.redirect("/users"))
+	.get("/external", ({ inertia }) => inertia.location("https://example.com"))
+	.get("/redirect", ({ inertia }) => inertia.redirect("/target"))
+	.put("/update", ({ inertia }) => inertia.redirect("/target"))
+	.get("/posts", ({ inertia }) =>
+		inertia.render(pages.posts({ posts: [{ id: 1 }, { id: 2 }] })),
+	)
+	.get("/plans", ({ inertia }) =>
+		inertia.render(pages.plansWithExpiry({ plans: () => ["basic", "pro"] })),
+	)
+	.get("/post", ({ inertia }) =>
+		inertia.render(
+			pages.postWithSidebar({ title: "Hello", comments: () => [{ id: 1 }] }),
+		),
+	)
+	.get("/about-team", ({ inertia }) =>
+		inertia.render(pages.about({ members: ["Alice", "Bob"] })),
+	)
+	.get("/posts/:id", ({ inertia, params }) =>
+		inertia.render(
+			pages.postSimple(
+				{ title: "Custom Post" },
+				{ url: `/posts/${params.id}` },
+			),
+		),
+	)
+	.get("/logout", ({ inertia }) => {
+		inertia.clearHistory();
+		return inertia.render(pages.logout({ message: "Logged out" }));
+	})
+	.get("/dashboard", ({ inertia }) =>
+		inertia.render(
+			pages.dashboard({
+				title: "Dashboard",
+				heavyData: ["lots", "of", "data"],
+				auth: { user: "john" },
+				data: ["item1", "item2"],
+			}),
+		),
+	)
+	.get("/test", ({ inertia }) =>
+		inertia.render(pages.testTitle({ title: "Literal Value" })),
+	)
+	.get("/test/resolver", ({ inertia }) =>
+		inertia.render(pages.testTitle({ title: () => "Resolved Value" })),
+	)
+	.get("/test/merged", ({ inertia }) =>
+		inertia.render(pages.testItems({ items: () => [{ id: 1 }, { id: 2 }] })),
+	)
+	.get("/test/once", ({ inertia }) =>
+		inertia.render(pages.testConfig({ config: ["a", "b", "c"] })),
+	)
+	.get("/test/deferred", ({ inertia }) =>
+		inertia.render(
+			pages.testDeferred({
+				title: "Hello",
+				comments: ["comment1", "comment2"],
+			}),
+		),
+	)
+	.get("/test/async", ({ inertia }) =>
+		inertia.render(
+			pages.testData({
+				data: async () => {
+					await new Promise((resolve) => setTimeout(resolve, 10));
+					return "Async Value";
+				},
+			}),
+		),
+	)
+	.group("/encrypted", (app) =>
+		app
+			.use(encryptedPlugin)
+			.get("/secret", ({ inertia }) =>
+				inertia.render(pages.secret({ data: "sensitive" })),
+			),
+	);
+
+const api = treaty(app);
+
+const inertiaHeaders = (
+	options: {
+		version?: string;
+		partialComponent?: string;
+		partialData?: string;
+		partialExcept?: string;
+		exceptOnceProps?: string;
+	} = {},
+) => {
+	const headers: Record<string, string> = {
+		"X-Inertia": "true",
+		"X-Inertia-Version": options.version ?? "1.0.0",
+	};
+	if (options.partialComponent)
+		headers["X-Inertia-Partial-Component"] = options.partialComponent;
+	if (options.partialData)
+		headers["X-Inertia-Partial-Data"] = options.partialData;
+	if (options.partialExcept)
+		headers["X-Inertia-Partial-Except"] = options.partialExcept;
+	if (options.exceptOnceProps)
+		headers["X-Inertia-Except-Once-Props"] = options.exceptOnceProps;
+	return { headers };
+};
 
 describe("Initial HTML visit", () => {
-	test("returns HTML response with data-page attribute", async () => {
-		const app = createTestApp();
-		const api = treaty(app);
-		const { response, data } = await api.get();
+	test("returns HTML response with page data", async () => {
+		const { data, response } = await api.get();
 
 		expect(response.status).toBe(200);
+		expect(response.headers.get("Content-Type")).toContain("text/html");
 
 		await inertia(data)
+			.component("Home")
 			.has("title", "Welcome")
 			.has("appName", "Test App")
-			.component("Home")
+			.version("1.0.0")
 			.assert();
-	});
-
-	test("includes props in page object", async () => {
-		const app = createTestApp();
-		const response = await app.handle(new Request("http://localhost/"));
-		const html = await response.text();
-
-		// Parse the data-page attribute
-		const match = html.match(/data-page='([^']+)'/);
-		expect(match).toBeTruthy();
-		if (!match) throw new Error("Expected match");
-
-		const page = JSON.parse(match[1]);
-		expect(page.props.appName).toBe("Test App");
-	});
-
-	test("includes version in page object", async () => {
-		const app = createTestApp();
-		const response = await app.handle(new Request("http://localhost/"));
-		const html = await response.text();
-
-		const match = html.match(/data-page='([^']+)'/);
-		if (!match) throw new Error("Expected match");
-		const page = JSON.parse(match[1]);
-		expect(page.version).toBe("1.0.0");
 	});
 });
 
 describe("Inertia XHR request", () => {
 	test("returns JSON response for Inertia requests", async () => {
-		const app = createTestApp();
-		const response = await app.handle(
-			new Request("http://localhost/users", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
+		const { data, response } = await api.users.get(inertiaHeaders());
 
 		expect(response.status).toBe(200);
 		expect(response.headers.get("Content-Type")).toBe("application/json");
 		expect(response.headers.get("X-Inertia")).toBe("true");
 		expect(response.headers.get("Vary")).toBe("X-Inertia");
 
-		const page = await response.json();
-		expect(page.component).toBe("Users/Index");
-		expect(page.props.users).toEqual([{ id: 1, name: "John" }]);
+		await inertia(data)
+			.component("Users/Index")
+			.has("users", ["Alice", "Bob"])
+			.assert();
 	});
 
 	test("returns 409 on version mismatch", async () => {
-		const app = createTestApp();
-		const response = await app.handle(
-			new Request("http://localhost/users", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "old-version",
-				},
-			}),
+		const { response } = await api.users.get(
+			inertiaHeaders({ version: "old-version" }),
 		);
 
 		expect(response.status).toBe(409);
@@ -156,39 +279,20 @@ describe("Inertia XHR request", () => {
 
 describe("Redirects", () => {
 	test("redirect returns 302 for GET-like requests", async () => {
-		const { plugin } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { response } = await api.redirect.get();
 
-		const app = new Elysia()
-			.use(plugin)
-			.get("/redirect", ({ inertia }) => inertia.redirect("/target"));
-
-		const response = await app.handle(new Request("http://localhost/redirect"));
 		expect(response.status).toBe(302);
 		expect(response.headers.get("Location")).toBe("/target");
 	});
 
 	test("redirect returns 303 for PUT requests", async () => {
-		const { plugin } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { response } = await api.update.put();
 
-		const app = new Elysia()
-			.use(plugin)
-			.put("/update", ({ inertia }) => inertia.redirect("/target"));
-
-		const response = await app.handle(
-			new Request("http://localhost/update", { method: "PUT" }),
-		);
 		expect(response.status).toBe(303);
 	});
 
 	test("external redirect returns 409", async () => {
-		const app = createTestApp();
-		const response = await app.handle(new Request("http://localhost/external"));
+		const { response } = await api.external.get();
 
 		expect(response.status).toBe(409);
 		expect(response.headers.get("X-Inertia-Location")).toBe(
@@ -199,513 +303,225 @@ describe("Redirects", () => {
 
 describe("definePage integration", () => {
 	test("mergedProp props are included in page object", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.posts.get(inertiaHeaders());
 
-		const postsPage = definePage({
-			component: "Posts/Index",
-			props: {
-				posts: mergedProp<{ id: number }[]>({ matchOn: "id" }),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/posts", ({ inertia }) => {
-			return inertia.render(
-				postsPage({
-					posts: [{ id: 1 }, { id: 2 }],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/posts", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const page = await response.json();
-		expect(page.mergeProps).toContain("posts");
-		expect(page.matchPropsOn).toContain("posts.id");
+		await inertia(data)
+			.tap((page) => {
+				expect(page.mergeProps).toContain("posts");
+				expect(page.matchPropsOn).toContain("posts.id");
+			})
+			.assert();
 	});
 
 	test("once props configuration is included", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.plans.get(inertiaHeaders());
 
-		const plansPage = definePage({
-			component: "Plans/Index",
-			props: {
-				plans: prop<string[]>().once({ expiresAt: 123456789 }),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/plans", ({ inertia }) => {
-			return inertia.render(
-				plansPage({
-					plans: () => ["basic", "pro"],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/plans", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const page = await response.json();
-		expect(page.props.plans).toEqual(["basic", "pro"]);
-		expect(page.onceProps?.plans).toEqual({
-			prop: "plans",
-			expiresAt: 123456789,
-		});
+		await inertia(data)
+			.has("plans", ["basic", "pro"])
+			.tap((page) => {
+				expect(page.onceProps?.plans).toEqual({
+					prop: "plans",
+					expiresAt: 123456789,
+				});
+			})
+			.assert();
 	});
 
 	test("deferred props are tracked", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.post.get(inertiaHeaders());
 
-		const postPage = definePage({
-			component: "Post/Show",
-			props: {
-				title: prop<string>(),
-				comments: prop<{ id: number }[]>().deferred("sidebar"),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/post", ({ inertia }) => {
-			return inertia.render(
-				postPage({
-					title: "Hello",
-					comments: () => [{ id: 1 }],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/post", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const page = await response.json();
-		expect(page.props.title).toBe("Hello");
-		expect(page.deferredProps).toEqual({ sidebar: ["comments"] });
+		await inertia(data)
+			.has("title", "Hello")
+			.tap((page) => {
+				expect(page.deferredProps).toEqual({ sidebar: ["comments"] });
+			})
+			.assert();
 	});
 
 	test("url is injected from request when not provided", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api["about-team"].get(inertiaHeaders());
 
-		const aboutPage = definePage({
-			component: "About/Team",
-			props: {
-				members: prop<string[]>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/about-team", ({ inertia }) => {
-			return inertia.render(
-				aboutPage({
-					members: ["Alice", "Bob"],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/about-team", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const page = await response.json();
-		expect(page.url).toBe("/about-team");
+		await inertia(data).url("/about-team").assert();
 	});
 
 	test("custom url can be provided at render time", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.posts({ id: "42" }).get(inertiaHeaders());
 
-		const postPage = definePage({
-			component: "Post/Show",
-			props: {
-				title: prop<string>(),
-			},
-		});
-
-		const app = new Elysia()
-			.use(plugin)
-			.get("/posts/:id", ({ inertia, params }) => {
-				return inertia.render(
-					postPage({ title: "Custom Post" }, { url: `/posts/${params.id}` }),
-				);
-			});
-
-		const response = await app.handle(
-			new Request("http://localhost/posts/42", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const page = await response.json();
-		expect(page.url).toBe("/posts/42");
+		await inertia(data).url("/posts/42").assert();
 	});
 
 	test("global encryptHistory config works", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
+		const { definePage, createHelper } = createInertia({
 			version: "1.0.0",
 			render: renderPage,
 			encryptHistory: true,
 		});
-
+		const plugin = elysiaAdapter(createHelper);
 		const secretPage = definePage({
 			component: "Secret",
-			props: {
-				data: prop<string>(),
-			},
+			props: { data: prop<string>() },
 		});
 
-		const app = new Elysia().use(plugin).get("/secret", ({ inertia }) => {
-			return inertia.render(secretPage({ data: "sensitive" }));
-		});
+		const testApp = new Elysia()
+			.use(plugin)
+			.get("/secret", ({ inertia }) =>
+				inertia.render(secretPage({ data: "sensitive" })),
+			);
 
-		const response = await app.handle(
+		const response = await testApp.handle(
 			new Request("http://localhost/secret", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
+				headers: { "X-Inertia": "true", "X-Inertia-Version": "1.0.0" },
 			}),
 		);
 
-		const page = await response.json();
-		expect(page.encryptHistory).toBe(true);
+		await inertia(response)
+			.tap((page) => expect(page.encryptHistory).toBe(true))
+			.assert();
 	});
 
 	test("encryptHistory helper overrides global config", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
+		const { definePage, createHelper } = createInertia({
 			version: "1.0.0",
 			render: renderPage,
 			encryptHistory: false,
 		});
-
+		const plugin = elysiaAdapter(createHelper);
 		const secretPage = definePage({
 			component: "Secret",
-			props: {
-				data: prop<string>(),
-			},
+			props: { data: prop<string>() },
 		});
 
-		const app = new Elysia().use(plugin).get("/secret", ({ inertia }) => {
+		const testApp = new Elysia().use(plugin).get("/secret", ({ inertia }) => {
 			inertia.encryptHistory();
 			return inertia.render(secretPage({ data: "sensitive" }));
 		});
 
-		const response = await app.handle(
+		const response = await testApp.handle(
 			new Request("http://localhost/secret", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
+				headers: { "X-Inertia": "true", "X-Inertia-Version": "1.0.0" },
 			}),
 		);
 
-		const page = await response.json();
-		expect(page.encryptHistory).toBe(true);
+		await inertia(response)
+			.tap((page) => expect(page.encryptHistory).toBe(true))
+			.assert();
 	});
 
 	test("clearHistory helper works", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.logout.get(inertiaHeaders());
 
-		const logoutPage = definePage({
-			component: "Logout",
-			props: {
-				message: prop<string>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/logout", ({ inertia }) => {
-			inertia.clearHistory();
-			return inertia.render(logoutPage({ message: "Logged out" }));
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/logout", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const page = await response.json();
-		expect(page.clearHistory).toBe(true);
+		await inertia(data)
+			.tap((page) => expect(page.clearHistory).toBe(true))
+			.assert();
 	});
 });
 
 describe("Partial reloads", () => {
 	test("returns only requested props via X-Inertia-Partial-Data", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		const usersPage = definePage({
-			component: "Users/Index",
-			props: {
-				users: prop<string[]>(),
-				companies: prop<string[]>(),
-				roles: prop<string[]>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/users", ({ inertia }) => {
-			return inertia.render(
-				usersPage({
-					users: ["Alice", "Bob"],
-					companies: ["Acme", "Corp"],
-					roles: ["admin", "user"],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/users", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-					"X-Inertia-Partial-Component": "Users/Index",
-					"X-Inertia-Partial-Data": "users",
-				},
-			}),
+		const { data } = await api.users.get(
+			inertiaHeaders({ partialComponent: "Users/Index", partialData: "users" }),
 		);
 
-		const page = await response.json();
-		expect(page.props.users).toEqual(["Alice", "Bob"]);
-		expect(page.props.companies).toBeUndefined();
-		expect(page.props.roles).toBeUndefined();
-		expect(page.props.errors).toEqual({});
+		await inertia(data)
+			.has("users", ["Alice", "Bob"])
+			.has("errors", {})
+			.missing("companies")
+			.missing("roles")
+			.assert();
 	});
 
 	test("excludes props via X-Inertia-Partial-Except", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		const usersPage = definePage({
-			component: "Users/Index",
-			props: {
-				users: prop<string[]>(),
-				companies: prop<string[]>(),
-				roles: prop<string[]>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/users", ({ inertia }) => {
-			return inertia.render(
-				usersPage({
-					users: ["Alice", "Bob"],
-					companies: ["Acme", "Corp"],
-					roles: ["admin", "user"],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/users", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-					"X-Inertia-Partial-Component": "Users/Index",
-					"X-Inertia-Partial-Except": "companies",
-				},
+		const { data } = await api.users.get(
+			inertiaHeaders({
+				partialComponent: "Users/Index",
+				partialExcept: "companies",
 			}),
 		);
 
-		const page = await response.json();
-		expect(page.props.users).toEqual(["Alice", "Bob"]);
-		expect(page.props.companies).toBeUndefined();
-		expect(page.props.roles).toEqual(["admin", "user"]);
+		await inertia(data)
+			.has("users", ["Alice", "Bob"])
+			.has("roles", ["admin", "user"])
+			.missing("companies")
+			.assert();
 	});
 
 	test("except takes precedence over only", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		const usersPage = definePage({
-			component: "Users/Index",
-			props: {
-				users: prop<string[]>(),
-				companies: prop<string[]>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/users", ({ inertia }) => {
-			return inertia.render(
-				usersPage({
-					users: ["Alice"],
-					companies: ["Acme"],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/users", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-					"X-Inertia-Partial-Component": "Users/Index",
-					"X-Inertia-Partial-Data": "users,companies",
-					"X-Inertia-Partial-Except": "companies",
-				},
+		const { data } = await api.users.get(
+			inertiaHeaders({
+				partialComponent: "Users/Index",
+				partialData: "users,companies",
+				partialExcept: "companies",
 			}),
 		);
 
-		const page = await response.json();
-		expect(page.props.users).toEqual(["Alice"]);
-		expect(page.props.companies).toBeUndefined();
+		await inertia(data)
+			.has("users", ["Alice", "Bob"])
+			.missing("companies")
+			.assert();
 	});
 
 	test("partial reload for different component returns all props", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		const usersPage = definePage({
-			component: "Users/Index",
-			props: {
-				users: prop<string[]>(),
-				companies: prop<string[]>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/users", ({ inertia }) => {
-			return inertia.render(
-				usersPage({
-					users: ["Alice"],
-					companies: ["Acme"],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/users", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-					"X-Inertia-Partial-Component": "DifferentComponent",
-					"X-Inertia-Partial-Data": "users",
-				},
+		const { data } = await api.users.get(
+			inertiaHeaders({
+				partialComponent: "DifferentComponent",
+				partialData: "users",
 			}),
 		);
 
-		const page = await response.json();
-		expect(page.props.users).toEqual(["Alice"]);
-		expect(page.props.companies).toEqual(["Acme"]);
+		await inertia(data)
+			.has("users", ["Alice", "Bob"])
+			.has("companies", ["Acme", "Corp"])
+			.assert();
 	});
 });
 
 describe("Deferred props", () => {
 	test("deferred props are not resolved on initial visit", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
 		let commentsResolved = false;
 
-		const postPage = definePage({
-			component: "Post/Show",
-			props: {
-				title: prop<string>(),
-				comments: prop<string[]>().deferred(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/post", ({ inertia }) => {
-			return inertia.render(
-				postPage({
-					title: "Hello",
-					comments: () => {
-						commentsResolved = true;
-						return ["comment1", "comment2"];
-					},
-				}),
+		const testApp = new Elysia()
+			.use(defaultPlugin)
+			.get("/post", ({ inertia }) =>
+				inertia.render(
+					pages.post({
+						title: "Hello",
+						comments: () => {
+							commentsResolved = true;
+							return ["comment1", "comment2"];
+						},
+					}),
+				),
 			);
-		});
 
-		const response = await app.handle(
+		const response = await testApp.handle(
 			new Request("http://localhost/post", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
+				headers: { "X-Inertia": "true", "X-Inertia-Version": "1.0.0" },
 			}),
 		);
 
-		const page = await response.json();
-		expect(page.props.title).toBe("Hello");
-		expect(page.props.comments).toBeUndefined();
-		expect(page.deferredProps).toEqual({ default: ["comments"] });
+		await inertia(response)
+			.has("title", "Hello")
+			.missing("comments")
+			.tap((page) => {
+				expect(page.deferredProps).toEqual({ default: ["comments"] });
+			})
+			.assert();
 		expect(commentsResolved).toBe(false);
 	});
 
 	test("deferred props are resolved when requested via partial reload", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		const postPage = definePage({
-			component: "Post/Show",
-			props: {
-				title: prop<string>(),
-				comments: prop<string[]>().deferred(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/post", ({ inertia }) => {
-			return inertia.render(
-				postPage({
-					title: "Hello",
-					comments: () => ["comment1", "comment2"],
-				}),
+		const testApp = new Elysia()
+			.use(defaultPlugin)
+			.get("/post", ({ inertia }) =>
+				inertia.render(
+					pages.post({
+						title: "Hello",
+						comments: () => ["comment1", "comment2"],
+					}),
+				),
 			);
-		});
 
-		const response = await app.handle(
+		const response = await testApp.handle(
 			new Request("http://localhost/post", {
 				headers: {
 					"X-Inertia": "true",
@@ -716,42 +532,32 @@ describe("Deferred props", () => {
 			}),
 		);
 
-		const page = await response.json();
-		expect(page.props.comments).toEqual(["comment1", "comment2"]);
-		expect(page.props.title).toBeUndefined();
+		await inertia(response)
+			.has("comments", ["comment1", "comment2"])
+			.missing("title")
+			.assert();
 	});
 });
 
 describe("Once props", () => {
 	test("once props are skipped when in X-Inertia-Except-Once-Props", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
 		let plansResolved = false;
 
-		const plansPage = definePage({
-			component: "Plans/Index",
-			props: {
-				title: prop<string>(),
-				plans: prop<string[]>().once(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/plans", ({ inertia }) => {
-			return inertia.render(
-				plansPage({
-					title: "Pricing",
-					plans: () => {
-						plansResolved = true;
-						return ["basic", "pro"];
-					},
-				}),
+		const testApp = new Elysia()
+			.use(defaultPlugin)
+			.get("/plans", ({ inertia }) =>
+				inertia.render(
+					pages.plans({
+						title: "Pricing",
+						plans: () => {
+							plansResolved = true;
+							return ["basic", "pro"];
+						},
+					}),
+				),
 			);
-		});
 
-		const response = await app.handle(
+		const response = await testApp.handle(
 			new Request("http://localhost/plans", {
 				headers: {
 					"X-Inertia": "true",
@@ -761,268 +567,94 @@ describe("Once props", () => {
 			}),
 		);
 
-		const page = await response.json();
-		expect(page.props.title).toBe("Pricing");
-		expect(page.props.plans).toBeUndefined();
+		await inertia(response).has("title", "Pricing").missing("plans").assert();
 		expect(plansResolved).toBe(false);
 	});
 
 	test("once props are included when not in except list", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		const plansPage = definePage({
-			component: "Plans/Index",
-			props: {
-				title: prop<string>(),
-				plans: prop<string[]>().once(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/plans", ({ inertia }) => {
-			return inertia.render(
-				plansPage({
-					title: "Pricing",
-					plans: () => ["basic", "pro"],
-				}),
+		const testApp = new Elysia()
+			.use(defaultPlugin)
+			.get("/plans", ({ inertia }) =>
+				inertia.render(
+					pages.plans({ title: "Pricing", plans: () => ["basic", "pro"] }),
+				),
 			);
-		});
 
-		const response = await app.handle(
+		const response = await testApp.handle(
 			new Request("http://localhost/plans", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
+				headers: { "X-Inertia": "true", "X-Inertia-Version": "1.0.0" },
 			}),
 		);
 
-		const page = await response.json();
-		expect(page.props.title).toBe("Pricing");
-		expect(page.props.plans).toEqual(["basic", "pro"]);
+		await inertia(response)
+			.has("title", "Pricing")
+			.has("plans", ["basic", "pro"])
+			.assert();
 	});
 });
 
 describe("Optional and Always props", () => {
 	test("optional props are not included on standard visits", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.dashboard.get(inertiaHeaders());
 
-		const dashboardPage = definePage({
-			component: "Dashboard",
-			props: {
-				title: prop<string>(),
-				heavyData: prop<string[]>().optional(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/dashboard", ({ inertia }) => {
-			return inertia.render(
-				dashboardPage({
-					title: "Dashboard",
-					heavyData: ["lots", "of", "data"],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/dashboard", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const page = await response.json();
-		expect(page.props.title).toBe("Dashboard");
-		// Optional props should not be included on standard visits
-		expect(page.props.heavyData).toBeUndefined();
+		await inertia(data).has("title", "Dashboard").missing("heavyData").assert();
 	});
 
 	test("optional props are included when explicitly requested", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		const dashboardPage = definePage({
-			component: "Dashboard",
-			props: {
-				title: prop<string>(),
-				heavyData: prop<string[]>().optional(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/dashboard", ({ inertia }) => {
-			return inertia.render(
-				dashboardPage({
-					title: "Dashboard",
-					heavyData: ["lots", "of", "data"],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/dashboard", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-					"X-Inertia-Partial-Component": "Dashboard",
-					"X-Inertia-Partial-Data": "heavyData",
-				},
+		const { data } = await api.dashboard.get(
+			inertiaHeaders({
+				partialComponent: "Dashboard",
+				partialData: "heavyData",
 			}),
 		);
 
-		const page = await response.json();
-		expect(page.props.heavyData).toEqual(["lots", "of", "data"]);
+		await inertia(data).has("heavyData", ["lots", "of", "data"]).assert();
 	});
 
 	test("always props are included even in partial reloads that dont request them", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		const dashboardPage = definePage({
-			component: "Dashboard",
-			props: {
-				title: prop<string>(),
-				auth: prop<{ user: string }>().always(),
-				data: prop<string[]>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/dashboard", ({ inertia }) => {
-			return inertia.render(
-				dashboardPage({
-					title: "Dashboard",
-					auth: { user: "john" },
-					data: ["item1", "item2"],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/dashboard", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-					"X-Inertia-Partial-Component": "Dashboard",
-					"X-Inertia-Partial-Data": "data",
-				},
-			}),
+		const { data } = await api.dashboard.get(
+			inertiaHeaders({ partialComponent: "Dashboard", partialData: "data" }),
 		);
 
-		const page = await response.json();
-		expect(page.props.data).toEqual(["item1", "item2"]);
-		expect(page.props.auth).toEqual({ user: "john" });
-		expect(page.props.title).toBeUndefined();
+		await inertia(data)
+			.has("data", ["item1", "item2"])
+			.has("auth", { user: "john" })
+			.missing("title")
+			.assert();
 	});
 });
 
 describe("Unified prop values API", () => {
 	test("prop() accepts literal value", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.test.get(inertiaHeaders());
 
-		const page = definePage({
-			component: "Test",
-			props: {
-				title: prop<string>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/test", ({ inertia }) => {
-			return inertia.render(
-				page({
-					title: "Literal Value",
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/test", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const result = await response.json();
-		expect(result.props.title).toBe("Literal Value");
+		await inertia(data).has("title", "Literal Value").assert();
 	});
 
 	test("prop() accepts resolver function", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.test.resolver.get(inertiaHeaders());
 
-		const page = definePage({
-			component: "Test",
-			props: {
-				title: prop<string>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/test", ({ inertia }) => {
-			return inertia.render(
-				page({
-					title: () => "Resolved Value",
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/test", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const result = await response.json();
-		expect(result.props.title).toBe("Resolved Value");
+		await inertia(data).has("title", "Resolved Value").assert();
 	});
 
 	test("prop() resolver is only called when prop is included", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
 		let resolveCalled = false;
 
-		const page = definePage({
-			component: "Test",
-			props: {
-				title: prop<string>(),
-				expensive: prop<string>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/test", ({ inertia }) => {
-			return inertia.render(
-				page({
-					title: "Hello",
-					expensive: () => {
-						resolveCalled = true;
-						return "Expensive";
-					},
-				}),
+		const testApp = new Elysia()
+			.use(defaultPlugin)
+			.get("/test", ({ inertia }) =>
+				inertia.render(
+					pages.testExpensive({
+						title: "Hello",
+						expensive: () => {
+							resolveCalled = true;
+							return "Expensive";
+						},
+					}),
+				),
 			);
-		});
 
-		const response = await app.handle(
+		const response = await testApp.handle(
 			new Request("http://localhost/test", {
 				headers: {
 					"X-Inertia": "true",
@@ -1033,165 +665,41 @@ describe("Unified prop values API", () => {
 			}),
 		);
 
-		const result = await response.json();
-		expect(result.props.title).toBe("Hello");
-		expect(result.props.expensive).toBeUndefined();
+		await inertia(response).has("title", "Hello").missing("expensive").assert();
 		expect(resolveCalled).toBe(false);
 	});
 
 	test("mergedProp() accepts resolver function", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.test.merged.get(inertiaHeaders());
 
-		const page = definePage({
-			component: "Test",
-			props: {
-				items: mergedProp<{ id: number }[]>({ matchOn: "id" }),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/test", ({ inertia }) => {
-			return inertia.render(
-				page({
-					items: () => [{ id: 1 }, { id: 2 }],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/test", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const result = await response.json();
-		expect(result.props.items).toEqual([{ id: 1 }, { id: 2 }]);
+		await inertia(data)
+			.has("items", [{ id: 1 }, { id: 2 }])
+			.assert();
 	});
 
 	test("prop().once() accepts literal value", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.test.once.get(inertiaHeaders());
 
-		const page = definePage({
-			component: "Test",
-			props: {
-				config: prop<string[]>().once(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/test", ({ inertia }) => {
-			return inertia.render(
-				page({
-					config: ["a", "b", "c"],
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/test", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const result = await response.json();
-		expect(result.props.config).toEqual(["a", "b", "c"]);
+		await inertia(data).has("config", ["a", "b", "c"]).assert();
 	});
 
 	test("prop().deferred() accepts literal value", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		const page = definePage({
-			component: "Test",
-			props: {
-				title: prop<string>(),
-				comments: prop<string[]>().deferred(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/test", ({ inertia }) => {
-			return inertia.render(
-				page({
-					title: "Hello",
-					comments: ["comment1", "comment2"],
-				}),
-			);
-		});
-
-		// Request the deferred prop via partial reload
-		const response = await app.handle(
-			new Request("http://localhost/test", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-					"X-Inertia-Partial-Component": "Test",
-					"X-Inertia-Partial-Data": "comments",
-				},
-			}),
+		const { data } = await api.test.deferred.get(
+			inertiaHeaders({ partialComponent: "Test", partialData: "comments" }),
 		);
 
-		const result = await response.json();
-		expect(result.props.comments).toEqual(["comment1", "comment2"]);
+		await inertia(data).has("comments", ["comment1", "comment2"]).assert();
 	});
 
 	test("async resolver functions are awaited", async () => {
-		const { plugin, definePage } = createInertiaWithAdapter({
-			version: "1.0.0",
-			render: renderPage,
-		});
+		const { data } = await api.test.async.get(inertiaHeaders());
 
-		const page = definePage({
-			component: "Test",
-			props: {
-				data: prop<string>(),
-			},
-		});
-
-		const app = new Elysia().use(plugin).get("/test", ({ inertia }) => {
-			return inertia.render(
-				page({
-					data: async () => {
-						await new Promise((resolve) => setTimeout(resolve, 10));
-						return "Async Value";
-					},
-				}),
-			);
-		});
-
-		const response = await app.handle(
-			new Request("http://localhost/test", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
-			}),
-		);
-
-		const result = await response.json();
-		expect(result.props.data).toBe("Async Value");
+		await inertia(data).has("data", "Async Value").assert();
 	});
 });
 
 describe("Error bags", () => {
 	test("staged errors are included in page props", async () => {
-		const { definePage, createHelper } = createInertia({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		// Create a mock flash adapter
 		let flashData: Record<string, unknown> = {};
 		const mockFlashAdapter: FlashAdapter = {
 			getAll: () => flashData,
@@ -1200,72 +708,39 @@ describe("Error bags", () => {
 			},
 		};
 
-		const formPage = definePage({
-			component: "Form",
-			props: {
-				title: prop<string>(),
-			},
-		});
-
-		const inertia = await createHelper({
+		const helper = await defaultInertia.createHelper({
 			request: new Request("http://localhost/form", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
+				headers: { "X-Inertia": "true", "X-Inertia-Version": "1.0.0" },
 			}),
 			flash: mockFlashAdapter,
 		});
 
-		// Stage errors
-		inertia.errors({ email: "Email is required" });
+		helper.errors({ email: "Email is required" });
+		helper.redirect("/form");
 
-		// Redirect to flash the errors
-		inertia.redirect("/form");
-
-		// Now simulate the follow-up request that reads the flashed errors
-		const inertia2 = await createHelper({
+		const helper2 = await defaultInertia.createHelper({
 			request: new Request("http://localhost/form", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
+				headers: { "X-Inertia": "true", "X-Inertia-Version": "1.0.0" },
 			}),
 			flash: mockFlashAdapter,
 		});
 
-		const response = await inertia2.render(formPage({ title: "Contact" }));
-		const page = await response.json();
+		const response = await helper2.render(pages.form({ title: "Contact" }));
 
-		expect(page.props.errors).toEqual({
-			default: { email: "Email is required" },
-		});
+		await inertia(response)
+			.has("errors", { default: { email: "Email is required" } })
+			.assert();
 	});
 
 	test("error bag header shapes errors under bag key", async () => {
-		const { definePage, createHelper } = createInertia({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
-		// Create a mock flash adapter with pre-flashed errors
 		const mockFlashAdapter: FlashAdapter = {
 			getAll: () => ({
-				_inertia_errors: {
-					createUser: { name: "Name is required" },
-				},
+				_inertia_errors: { createUser: { name: "Name is required" } },
 			}),
 			set: () => {},
 		};
 
-		const formPage = definePage({
-			component: "Form",
-			props: {
-				title: prop<string>(),
-			},
-		});
-
-		const inertia = await createHelper({
+		const helper = await defaultInertia.createHelper({
 			request: new Request("http://localhost/form", {
 				headers: {
 					"X-Inertia": "true",
@@ -1276,45 +751,28 @@ describe("Error bags", () => {
 			flash: mockFlashAdapter,
 		});
 
-		const response = await inertia.render(formPage({ title: "Contact" }));
-		const page = await response.json();
+		const response = await helper.render(pages.form({ title: "Contact" }));
 
-		expect(page.props.errors).toEqual({
-			createUser: { name: "Name is required" },
-		});
+		await inertia(response)
+			.has("errors", { createUser: { name: "Name is required" } })
+			.assert();
 	});
 
 	test("returns empty errors when no errors exist", async () => {
-		const { definePage, createHelper } = createInertia({
-			version: "1.0.0",
-			render: renderPage,
-		});
-
 		const mockFlashAdapter: FlashAdapter = {
 			getAll: () => ({}),
 			set: () => {},
 		};
 
-		const formPage = definePage({
-			component: "Form",
-			props: {
-				title: prop<string>(),
-			},
-		});
-
-		const inertia = await createHelper({
+		const helper = await defaultInertia.createHelper({
 			request: new Request("http://localhost/form", {
-				headers: {
-					"X-Inertia": "true",
-					"X-Inertia-Version": "1.0.0",
-				},
+				headers: { "X-Inertia": "true", "X-Inertia-Version": "1.0.0" },
 			}),
 			flash: mockFlashAdapter,
 		});
 
-		const response = await inertia.render(formPage({ title: "Contact" }));
-		const page = await response.json();
+		const response = await helper.render(pages.form({ title: "Contact" }));
 
-		expect(page.props.errors).toEqual({});
+		await inertia(response).has("errors", {}).assert();
 	});
 });

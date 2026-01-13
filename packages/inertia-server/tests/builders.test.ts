@@ -60,8 +60,6 @@ describe("prop()", () => {
 		const builder1 = prop<string>().optional().always();
 		expect(builder1[BUILDER_STATE].isOptional).toBe(true);
 		expect(builder1[BUILDER_STATE].isAlways).toBe(true);
-
-		// Note: both flags being true is technically possible but isAlways takes precedence in resolution
 	});
 });
 

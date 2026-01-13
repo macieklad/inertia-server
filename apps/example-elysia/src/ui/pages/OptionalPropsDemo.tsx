@@ -71,8 +71,8 @@ export default function OptionalPropsDemo({
 									{heavyData.items.length} items loaded
 								</p>
 								<ul className="columns-3 gap-4 text-sm">
-									{heavyData.items.slice(0, 30).map((item, i) => (
-										<li key={i} className="text-muted-foreground">
+									{heavyData.items.slice(0, 30).map((item) => (
+										<li key={item} className="text-muted-foreground">
 											{item}
 										</li>
 									))}

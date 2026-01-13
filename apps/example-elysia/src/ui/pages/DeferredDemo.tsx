@@ -62,8 +62,8 @@ export default function DeferredDemo({
 							fallback={<LoadingSpinner data-testid="sidebar-loading" />}
 						>
 							<ul className="space-y-2 pl-4" data-testid="sidebar-content">
-								{sidebarData?.map((item, i) => (
-									<li key={i} className="text-sm">
+								{sidebarData?.map((item) => (
+									<li key={item} className="text-sm">
 										- {item}
 									</li>
 								))}
