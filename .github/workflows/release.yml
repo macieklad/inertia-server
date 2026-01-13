@@ -30,7 +30,6 @@ jobs:
 
       - run: bun ci
       - run: bun add -g npm@11.7.0
-      - run: echo "npm version $(npm --version)"
 
       - name: Create Release PR or Publish
         id: changesets
