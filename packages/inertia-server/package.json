@@ -16,6 +16,10 @@
 		"./types": {
 			"types": "./dist/types.d.ts",
 			"import": "./dist/types.js"
+		},
+		"./testing": {
+			"types": "./dist/testing.d.ts",
+			"import": "./dist/testing.js"
 		}
 	},
 	"files": [
@@ -35,7 +39,8 @@
 	},
 	"devDependencies": {
 		"@types/bun": "latest",
-		"elysia": "latest",
+		"elysia": "^1.4.21",
+		"@elysiajs/eden": "^1.4.6",
 		"typescript": "^5.9.3"
 	}
 }

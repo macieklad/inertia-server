@@ -24,7 +24,12 @@
 			},
 			{
 				"group": "The Basics",
-				"pages": ["basics/responses", "basics/pages", "basics/configuration"]
+				"pages": [
+					"basics/responses",
+					"basics/pages",
+					"basics/configuration",
+					"basics/testing"
+				]
 			},
 			{
 				"group": "Integrations",

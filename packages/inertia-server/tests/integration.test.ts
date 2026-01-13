@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { treaty } from "@elysiajs/eden";
 import { Elysia } from "elysia";
 import { elysiaAdapter } from "../src/elysia";
 import { createInertia, mergedProp, prop } from "../src/index";
+import { inertia } from "../src/testing";
 import type { FlashAdapter, InertiaPage } from "../src/types";
 
 // Simple HTML renderer for testing
@@ -76,15 +78,16 @@ function createTestApp() {
 describe("Initial HTML visit", () => {
 	test("returns HTML response with data-page attribute", async () => {
 		const app = createTestApp();
-		const response = await app.handle(new Request("http://localhost/"));
+		const api = treaty(app);
+		const { response, data } = await api.get();
 
 		expect(response.status).toBe(200);
-		expect(response.headers.get("Content-Type")).toContain("text/html");
 
-		const html = await response.text();
-		expect(html).toContain("<!DOCTYPE html>");
-		expect(html).toContain("data-page=");
-		expect(html).toContain('"component":"Home"');
+		await inertia(data)
+			.has("title", "Welcome")
+			.has("appName", "Test App")
+			.component("Home")
+			.assert();
 	});
 
 	test("includes props in page object", async () => {

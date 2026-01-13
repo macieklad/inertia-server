@@ -1,0 +1,226 @@
+---
+title: Testing
+description: 'How to test your inertia application'
+---
+
+`inertia-server` provides testing utilities that work with your test setup. You can use the utilities for response parsing
+and assertions, or delegate the latter part to your test framework.
+
+```ts
+import { inertia } from 'inertia-server/testing';
+
+const response = await app.fetch(new Request('http://localhost/users'));
+
+await inertia(response)
+  .component('Users/Index')
+  .has('users')
+  .has('title', 'All Users')
+  .missing('secret')
+  .assert();
+```
+
+## Getting Started
+
+There two functions used for testing:
+
+```ts
+import { inertia, createAppHelper } from 'inertia-server/testing';
+```
+
+The `inertia` function accepts a `Response` object, a HTML string or a Inertia page object and returns assertion utils.
+If you are going to chain requests, for exmaple to load deferred props, `inertia` function takes an option object as 
+a second argument that contains the `fetch` function. You will have to provide it to instruct the assertion utils,
+how to communicate with your app.
+
+```ts
+const inertia = inertia(response, { fetch: app.fetch });
+```
+
+If you don't do it, `inertia-server` will try to infer your server address from
+the response you give it, otherwise it will throw an error. 
+
+You can also use the `createAppHelper` function to create a `inertia` function that will be bound to your app,
+so there is no need to pass the `fetch` function every time.
+
+```ts
+// app is a WinterTc compatible instance, so it just needs 
+// to have a `fetch` key that handles requests on its instance
+const inertia = createAppHelper(app);
+```
+
+Otherwise we have to know how to issue more requests to your app, 
+
+## Assertions
+
+`inertia-server` comes with a set of basic assertions to test your page. If they are not enough for you, see the `tap` helper.
+
+<Note>All assertions support dot notation for nested properties, i.e. `user.profile.name` is the same as `user['profile']['name']`.</Note>
+
+### Checking Props
+
+Use `has()` to assert that a prop exists:
+```ts
+await inertia(response)
+  .has('users')
+  .assert();
+```
+
+You can also check for a specific value:
+
+```ts
+await inertia(response)
+  .has('title', 'Welcome')
+  .has('count', 42)
+  .has('tags', ['a', 'b', 'c'])
+  .assert();
+```
+
+Or use a callback for custom validation:
+
+```ts
+await inertia(response)
+  .has('users', (users) => Array.isArray(users) && users.length > 0)
+  .has('createdAt', (date) => new Date(date) < new Date())
+  .assert();
+```
+<Note>`has` compares values deeply, but it's an strict equal check, so it will fail if the value is not exactly the same.</Note>
+
+### Missing Props
+
+To assert that a prop does not exist, use the `missing` method.
+
+```ts
+await inertia(response)
+  .missing('password')
+  .missing('user.secretKey')
+  .assert();
+```
+
+### Flash and Errors
+
+Flash messages and errors are just props, so you can assert them using `has()` and `missing()`:
+
+```ts
+await inertia(response)
+  .has('flash.success', 'User created!')
+  .missing('flash.error')
+  .has('errors.email', 'Email is required')
+  .assert();
+```
+
+### Page Metadata
+
+Assert component name, URL, or version:
+
+```ts
+await inertia(response)
+  .component('Users/Index')
+  .url('/users')
+  .version('1.0.0')
+  .assert();
+```
+
+## Custom Assertions
+
+Use `tap()` to run custom assertions with direct access to the page object. If you don't want to use package specific assertions, you can use this method to run your own.
+
+```ts
+await inertia(response)
+  .tap((page) => {
+    expect(page.props.users).toHaveLength(3);
+    expect(page.component).toMatch(/^Users\//);
+  })
+  .assert();
+```
+
+This is useful when you need to use your test framework's assertion methods or perform complex validations.
+
+## Partial Reloads
+
+Test partial reload behavior by making follow-up requests with specific props.
+
+### Reload Only
+
+Request only specific props:
+
+```ts
+await inertia(response, { fetch: app.fetch })
+  .has('users')
+  .has('roles')
+  .reloadOnly('users')
+  .has('users')
+  .missing('roles')  // roles excluded from partial reload
+  .assert();
+```
+
+With a callback:
+
+```ts
+await inertia(response, { fetch: app.fetch })
+  .reloadOnly(['users', 'permissions'], (page) => {
+    expect(page.props.users).toBeDefined();
+    expect(page.props.roles).toBeUndefined();
+  })
+  .assert();
+```
+
+### Reload Except
+
+Request all props except specific ones:
+
+```ts
+await inertia(response, { fetch: app.fetch })
+  .reloadExcept('heavyData')
+  .has('users')
+  .has('roles')
+  .missing('heavyData')
+  .assert();
+```
+
+### Deferred Props
+
+Test deferred prop loading:
+
+```ts
+await inertia(response, { fetch: app.fetch })
+  .has('title')
+  .missing('comments')  // not loaded yet
+  .loadDeferredProps()
+  .has('comments')      // now loaded
+  .has('analytics')
+  .assert();
+```
+
+Load specific groups:
+
+```ts
+await inertia(response, { fetch: app.fetch })
+  .loadDeferredProps('sidebar')
+  .has('relatedPosts')
+  .missing('comments')  // different group
+  .assert();
+```
+
+## Extracting Data
+
+You can use inertia utils to help you with parsing your responses, and not use its assertion features at all.
+
+### Get Props
+
+Extract props for use in other assertions:
+
+```ts
+const users = await inertia(response).props<User[]>('users');
+expect(users[0].name).toBe('Alice');
+
+const allProps = await inertia(response).props();
+```
+
+### Get Page Object
+
+```ts
+const page = await inertia(response).toPage();
+
+expect(page.component).toBe('Users/Index');
+expect(page.mergeProps).toContain('users');
+```
