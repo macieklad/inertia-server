@@ -85,6 +85,18 @@ const pages = {
 		component: "Posts/Index",
 		props: { posts: mergedProp<{ id: number }[]>({ matchOn: "id" }) },
 	}),
+	scrollPosts: definePage({
+		component: "ScrollPosts",
+		props: {
+			posts: mergedProp<{ id: number }[]>().scroll(),
+		},
+	}),
+	scrollPostsCustomPage: definePage({
+		component: "ScrollPostsCustom",
+		props: {
+			posts: mergedProp<{ id: number }[]>().scroll({ pageName: "p" }),
+		},
+	}),
 	plansWithExpiry: definePage({
 		component: "Plans/Index",
 		props: { plans: prop<string[]>().once({ expiresAt: 123456789 }) },
@@ -202,6 +214,16 @@ const app = new Elysia()
 			}),
 		),
 	)
+	.get("/scroll-posts", ({ inertia, query }) => {
+		const page = parseInt((query.page as string) ?? "1", 10);
+		const hasMore = page < 3;
+		return inertia.render(
+			pages.scrollPosts({
+				posts: [{ id: page * 10 + 1 }, { id: page * 10 + 2 }],
+				$hasMore: { posts: hasMore },
+			}),
+		);
+	})
 	.group("/encrypted", (app) =>
 		app
 			.use(encryptedPlugin)
@@ -695,6 +717,77 @@ describe("Unified prop values API", () => {
 		const { data } = await api.test.async.get(inertiaHeaders());
 
 		await inertia(data).has("data", "Async Value").assert();
+	});
+});
+
+describe("scrollProps with $hasMore", () => {
+	test("scrollProps.nextPage is set when $hasMore is true", async () => {
+		const { data } = await api["scroll-posts"].get();
+
+		await inertia(data)
+			.has("posts", [{ id: 11 }, { id: 12 }])
+			.tap((page) => {
+				expect(page.scrollProps?.posts).toEqual({
+					pageName: "page",
+					previousPage: null,
+					nextPage: 2,
+					currentPage: 1,
+				});
+			})
+			.assert();
+	});
+
+	test("scrollProps.nextPage is null when $hasMore is false", async () => {
+		const { data } = await api["scroll-posts"].get({
+			query: { page: "3" },
+		});
+
+		await inertia(data)
+			.tap((page) => {
+				expect(page.scrollProps).toBeDefined();
+				expect(page.scrollProps?.posts).toEqual({
+					pageName: "page",
+					previousPage: 2,
+					nextPage: null,
+					currentPage: 3,
+				});
+			})
+			.assert();
+	});
+
+	test("scrollProps.previousPage is set based on currentPage", async () => {
+		const { data } = await api["scroll-posts"].get({
+			query: { page: "2" },
+		});
+
+		await inertia(data)
+			.tap((page) => {
+				expect(page.scrollProps?.posts).toEqual({
+					pageName: "page",
+					previousPage: 1,
+					nextPage: 3,
+					currentPage: 2,
+				});
+			})
+			.assert();
+	});
+
+	test("scrollOptions is accessible from page definition", () => {
+		expect(pages.scrollPosts.scrollOptions).toEqual({
+			posts: { pageName: "page" },
+		});
+	});
+
+	test("scrollOptions is empty for pages without scroll props", () => {
+		expect(pages.home.scrollOptions).toEqual({});
+	});
+
+	test("scroll() without args uses default pageName 'page'", () => {
+		expect(pages.scrollPosts.scrollOptions.posts.pageName).toBe("page");
+	});
+
+	test("scroll() with custom pageName uses provided value", () => {
+		expect(pages.scrollPostsCustomPage.scrollOptions.posts.pageName).toBe("p");
 	});
 });
 

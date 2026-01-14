@@ -73,16 +73,13 @@ const mockConversations: Conversation[] = [
 export const listsRoutes = router
 	.get("/posts", ({ inertia, query }) => {
 		const page = parseInt(query.page as string, 10) || 1;
-		const totalPages = Math.ceil(TOTAL_POSTS / POSTS_PER_PAGE);
-		const hasMore = page < totalPages;
-
 		return inertia.render(
 			postsPage({
 				title: "Posts - Infinite Scroll Demo",
 				posts: generatePosts(page, POSTS_PER_PAGE),
-				currentPage: page,
-				totalPages,
-				hasMore,
+				$hasMore: {
+					posts: page < Math.ceil(TOTAL_POSTS / POSTS_PER_PAGE),
+				},
 			}),
 		);
 	})

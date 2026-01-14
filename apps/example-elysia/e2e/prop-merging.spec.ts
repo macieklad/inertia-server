@@ -9,68 +9,58 @@ test.describe("mergedProp() - infinite scroll", () => {
 		await expect(postCards).toHaveCount(10);
 
 		await expect(page.getByText("Post #10:")).toBeVisible();
-		await expect(page.getByText("page 1 of 5")).toBeVisible();
-		await expect(getLoadMoreButton(page)).toBeVisible();
+		await expect(page.getByText("Showing 10 posts")).toBeVisible();
 	});
 
-	test("clicking Load More appends next page of posts", async ({ page }) => {
+	test("scrolling to bottom loads more posts", async ({ page }) => {
 		await visitPostsPage(page);
 		await expect(page.getByText("Post #1:")).toBeVisible({ timeout: 30000 });
 
 		const postCards = getPostCards(page);
 		await expect(postCards).toHaveCount(10);
 
-		await getLoadMoreButton(page).click();
-
-		await expect(postCards).toHaveCount(20);
+		await scrollToBottom(page);
+		await expect(postCards).toHaveCount(20, { timeout: 10000 });
 
 		await expect(page.getByText("Post #1:")).toBeVisible();
-		await expect(page.getByText("Post #10:")).toBeVisible();
 		await expect(page.getByText("Post #11:")).toBeVisible();
-		await expect(page.getByText("Post #20:")).toBeVisible();
 		await expect(page.getByText("Showing 20 posts")).toBeVisible();
 	});
 
-	test("multiple Load More clicks accumulate posts correctly", async ({
-		page,
-	}) => {
+	test("multiple scrolls accumulate posts correctly", async ({ page }) => {
 		await visitPostsPage(page);
 		await expect(page.getByText("Post #1:")).toBeVisible({ timeout: 30000 });
 
 		const postCards = getPostCards(page);
-
 		await expect(postCards).toHaveCount(10);
 
-		await getLoadMoreButton(page).click();
-		await expect(postCards).toHaveCount(20);
+		await scrollToBottom(page);
+		await expect(postCards).toHaveCount(20, { timeout: 10000 });
 
-		await getLoadMoreButton(page).click();
-		await expect(postCards).toHaveCount(30);
+		await scrollToBottom(page);
+		await expect(postCards).toHaveCount(30, { timeout: 10000 });
 
 		await expect(page.getByText("Post #1:")).toBeVisible();
 		await expect(page.getByText("Post #15:")).toBeVisible();
 		await expect(page.getByText("Post #25:")).toBeVisible();
 	});
 
-	test("Load More button disappears when all posts loaded", async ({
-		page,
-	}) => {
+	test("shows end message when all posts loaded", async ({ page }) => {
 		await visitPostsPage(page);
 		await expect(page.getByText("Post #1:")).toBeVisible({ timeout: 30000 });
 
-		const loadMoreButton = getLoadMoreButton(page);
 		const postCards = getPostCards(page);
 
 		for (let i = 0; i < 4; i++) {
-			await expect(loadMoreButton).toBeVisible();
-			await loadMoreButton.click();
-			await expect(postCards).toHaveCount((i + 2) * 10);
+			await scrollToBottom(page);
+			await expect(postCards).toHaveCount((i + 2) * 10, { timeout: 10000 });
 		}
 
-		await expect(loadMoreButton).not.toBeVisible();
-		await expect(page.getByText("You've reached the end!")).toBeVisible();
 		await expect(postCards).toHaveCount(50);
 		await expect(page.getByText("Showing 50 posts")).toBeVisible();
+		await expect(page.getByText("You've reached the end!")).toBeVisible({
+			timeout: 10000,
+		});
 	});
 
 	test("posts maintain order after multiple loads", async ({ page }) => {
@@ -78,10 +68,12 @@ test.describe("mergedProp() - infinite scroll", () => {
 		await expect(page.getByText("Post #1:")).toBeVisible({ timeout: 30000 });
 
 		const postCards = getPostCards(page);
-		await getLoadMoreButton(page).click();
-		await expect(postCards).toHaveCount(20);
-		await getLoadMoreButton(page).click();
-		await expect(postCards).toHaveCount(30);
+
+		await scrollToBottom(page);
+		await expect(postCards).toHaveCount(20, { timeout: 10000 });
+
+		await scrollToBottom(page);
+		await expect(postCards).toHaveCount(30, { timeout: 10000 });
 
 		const firstPost = postCards.first();
 		const lastPost = postCards.last();
@@ -101,6 +93,7 @@ function getPostCards(page: Page) {
 	return page.locator("[data-testid='card-header']");
 }
 
-function getLoadMoreButton(page: Page) {
-	return page.getByRole("button", { name: "Load More" });
+async function scrollToBottom(page: Page) {
+	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+	await page.waitForTimeout(500);
 }

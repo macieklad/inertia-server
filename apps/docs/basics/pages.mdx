@@ -16,7 +16,7 @@ const { definePage } = createInertia(...);
 Page definitions consist of the component name, and a set of props that will be passed to it.
 
 ```ts ~/server/inertia.ts
-import { createInertia, prop, mergedProp, deepMergedProp, type PageParams } from 'inertia-server';
+import { createInertia, prop, mergedProp, deepMergedProp, type PageProps } from 'inertia-server';
 
 const homePage = definePage({
   component: 'Home',
@@ -31,7 +31,7 @@ const homePage = definePage({
   requireShared: ['user'],
 });
 
-export type HomePageParams = PageParams<typeof homePage>;
+export type HomePageProps = PageProps<typeof homePage>;
 ```
 
 When handling inertia requests, you can render your page by passing a page context
@@ -50,9 +50,9 @@ On the client, you can use the created definitions to access your data with full
 
 <CodeGroup>
   ```tsx react icon="react"
-  import type { HomePageParams } from '~/server/inertia';
+  import type { HomePageProps } from '~/server/inertia';
 
-  function Home({ props }: HomePageParams) {
+  function Home({ user, posts, tasks }: HomePageProps) {
     /**
      * interface Props {
      *  title: string;
@@ -97,7 +97,7 @@ On the client, you can use the created definitions to access your data with full
      *  user: User
      * }
     */
-    let { title, description, posts, tasks, user } = $props<HomePageParams['props']>();
+    let { title, posts, tasks, user } = $props<HomePageProps>();
   </script>
 
   <div>
@@ -127,9 +127,221 @@ to help you customize your data loading behavior.
 
 ### Merging props
 
-### Deferred props
+Inertia overwrites props with the same name when reloading a page. However, you may need to merge new data with existing data instead. 
+For example, when implementing a “load more” button for paginated results.
 
-### Once Props
+Prop merging only works during [partial](https://inertiajs.com/docs/v2/data-props/partial-reloads) reloads. Full page reloads
+ will override the props with the new values.
+
+```ts
+const page = definePage({
+  component: 'Home',
+  props: {
+    posts: mergedProp<Posts[]>(),
+  },
+});
+```
+
+<Expandable title="Usage">
+```ts
+inertia.render(
+  page({
+    posts: () => [
+      { id: 1 },
+      { id: 2 },
+    ],
+  })
+);
+
+inertia.render(
+  page({
+    posts: () => [
+      { id: 3 },
+      { id: 4 },
+    ],
+  })
+);
+
+const finalPostsProp = [
+  { id: 1 },
+  { id: 2 },
+  { id: 3 },
+  { id: 4 },
+];
+```
+
+</Expandable>
+
+By default, new data will be appended to the end of the existing data. You can change this behavior by chaining the `prepend` method.
+
+```ts
+const page = definePage({
+  component: 'Home',
+  props: {
+    posts: mergedProp<{ id: number }[]>().prepend(),
+  },
+});
+```
+
+<Expandable title="Usage">
+```ts
+inertia.render(
+  page({
+    posts: () => [
+      { id: 1 },
+      { id: 2 },
+    ],
+  })
+);
+
+inertia.render(
+  page({
+    posts: () => [
+      { id: 3 },
+      { id: 4 },
+    ],
+  })
+);
+
+const finalPostsProp = [
+  { id: 3 },
+  { id: 4 },
+  { id: 1 },
+  { id: 2 },
+];
+```
+</Expandable>
+
+If you want to not only append, but replace some of the existing data, provide a `matchOn` option.
+By sending items with the same key, elements will be replaced, and rest - appended or prepended.
+
+```ts
+const page = definePage({
+  component: 'Home',
+  props: {
+    posts: mergedProp<{ id: number, value: string }[]>({ matchOn: "id" }),
+  },
+});
+```
+<Expandable title="Usage">
+```ts
+inertia.render(
+  page({
+    posts: () => [
+      { id: 1, value: 'foo' },
+      { id: 2, value: 'bar' },
+    ],
+  })
+);
+
+inertia.render(
+  page({
+    posts: () => [
+      { id: 1, value: 'baz' },
+      { id: 2, value: 'qux' },
+    ],
+  })
+);
+
+const finalPostsProp = [
+  { id: 1, value: 'baz' },
+  { id: 2, value: 'qux' },
+];
+```
+</Expandable>
+
+### Deep merging
+
+Instead of specifying which nested paths should be merged, you may use `deepMergedProp` to ensure a deep merge of the entire structure.
+
+```ts
+const page = definePage({
+  component: 'Chat',
+  props: {
+    chat: deepMergedProp<{ 
+      messages: { id: number; text: string }[], 
+      online: 12
+    }>({ matchOn: "meesges.id" }),
+  },
+});
+```
+<Expandable title="Usage">
+```ts
+inertia.render(
+  page({
+    chat: () => {
+      return { messages: [{ id: 1, text: 'Hello' }], online: 12 };
+    },
+  })
+);
+
+inertia.render(
+  page({
+    chat: () => {
+      return { messages: [{ id: 2, text: 'World' }], online: 13 };
+    },
+  })
+);
+
+const finalChatProp = {
+  messages: [
+    { id: 1, text: 'Hello' },
+    { id: 2, text: 'World' },
+  ],
+  online: 13,
+};
+```
+</Expandable>
+
+<Note>
+Deep merging was introduced before normal merging had support for prepending and targeting nested paths. In most cases, `mergedProp()` 
+with `matchOn` and its `append` and `prepend` methods should be sufficient.
+</Note>
+
+### Infinite scrolling
+
+Merged props can be used to implement [infinite scrolling](https://inertiajs.com/docs/v2/data-props/infinite-scroll) with inertia `<InfiniteScroll>` component.
+
+```ts
+const page = definePage({
+  component: 'Home',
+  props: {
+    posts: mergedProp<Posts[]>().scroll(),
+  },
+});
+```
+
+In this case, inertia will try to read `page` query parameter from your request and use it as the page number. To customise it, you can use the `pageName` option.
+
+```ts
+const page = definePage({
+  component: 'Home',
+  props: {
+    posts: mergedProp<Posts[]>().scroll({ pageName: 'page' }),
+  },
+});
+```
+
+When rendering a page, inertia will require you to provide the `hasMore` prop. It will be used to determine if there is more data to load.
+
+```ts
+inertia.render(page({
+  posts: () => getPosts(page),
+  otherScrollProp: () => getOtherScrollProp(page),
+  $hasMore: {
+    posts: true,
+    otherScrollProp: true,
+  },
+}));
+```
+
+To make backend integration easier, you can read the page parameter name from the page definition.
+```ts
+function handler(req: Request) {
+  const pageQueryParam = postsPage.scrollOptions.posts.pageName;
+  const page = req.query[pageQueryParam];
+}
+```
 
 ### Lazy loading
 When rendering a page, every `prop` value can be a literal, or a lazy evaluated function.
@@ -168,8 +380,23 @@ But if you want to, you can provide a literal value at the moment of the `render
 not be sent to the client, but it may useful if you want to execute some side effect when a page
 is rendered and the prop prepared, no matter whether its loaded or not.
 
+### Deferred props
 
-### Always and Optional props
-
+### Prop modifiers
+Always, once, optional
 
 ## Accessing other page object properties
+
+Flash data and errors are available inside the props object. To access page url, version and other metadata, use hooks from your framework of choice.
+
+```tsx react icon="react"
+import { usePage } from '@inertiajs/react';
+const { url, version } = usePage();
+
+return (
+  <div>
+    <h1>{url}</h1>
+    <p>{version}</p>
+  </div>
+);
+```

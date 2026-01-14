@@ -9,6 +9,7 @@ export const REQUIRED_SHARED = Symbol("inertia:required-shared");
 export const BUILDER_STATE = Symbol("inertia:builder:state");
 export const BUILDER_TYPE = Symbol("inertia:builder:type");
 export const BUILDER_LAZY = Symbol("inertia:builder:lazy");
+export const BUILDER_SCROLL = Symbol("inertia:builder:scroll");
 
 export type { InertiaConfigFor, ErrorValue, FlashData, SharedPageProps };
 
@@ -142,8 +143,15 @@ export interface InertiaPageDefinition<
 	): InertiaPageContext<S>;
 	readonly component: string;
 	readonly schema: S;
+	readonly scrollOptions: ExtractScrollOptions<S>;
 	readonly [REQUIRED_SHARED]: RS;
 }
+
+type ExtractScrollOptions<S extends PagePropsSchema> = {
+	[K in keyof S as S[K] extends { readonly [BUILDER_SCROLL]: true }
+		? K
+		: never]: StoredScrollOptions;
+};
 
 export interface PageDefinitionFnOptions {
 	url?: string;
@@ -153,19 +161,35 @@ export interface PageDefinitionFnOptions {
 
 export type PagePropsSchema = Record<string, AnyBuilder<unknown>>;
 
-export type PagePropsValues<S extends PagePropsSchema> = {
+// Extract keys of props that have scroll enabled
+type ScrollPropKeys<S extends PagePropsSchema> = {
+	[K in keyof S]: S[K] extends { readonly [BUILDER_SCROLL]: true } ? K : never;
+}[keyof S];
+
+// Base prop values without $hasMore
+type BasePropValues<S extends PagePropsSchema> = {
 	[K in keyof S]: S[K] extends BaseBuilder<infer T, boolean>
 		? T | (() => T | Promise<T>)
 		: never;
 };
+
+// If there are scroll props, require $hasMore with those keys
+export type PagePropsValues<S extends PagePropsSchema> =
+	ScrollPropKeys<S> extends never
+		? BasePropValues<S>
+		: BasePropValues<S> & {
+				$hasMore: { [K in ScrollPropKeys<S>]: boolean };
+			};
 
 export type AnyBuilder<T = unknown> =
 	| PropBuilder<T>
 	| OnceBuilder<T>
 	| DeferredBuilder<T>
 	| MergeBuilder<T>
+	| ScrollMergeBuilder<T>
 	| DeferredOnceBuilder<T>
-	| DeepMergeBuilder<T>;
+	| DeepMergeBuilder<T>
+	| ScrollDeepMergeBuilder<T>;
 
 export interface PropBuilder<T> extends BaseBuilder<T, false> {
 	once(opts?: OncePropOptions): OnceBuilder<T>;
@@ -187,13 +211,25 @@ export interface DeferredOnceBuilder<T> extends BaseBuilder<T, true> {}
 export interface MergeBuilder<T> extends BaseBuilder<T, false> {
 	append(): MergeBuilder<T>;
 	prepend(): MergeBuilder<T>;
-	scroll(opts: ScrollPropOptions): MergeBuilder<T>;
+	scroll(opts?: ScrollPropOptions): ScrollMergeBuilder<T>;
+}
+
+export interface ScrollMergeBuilder<T> extends BaseBuilder<T, false> {
+	readonly [BUILDER_SCROLL]: true;
+	append(): ScrollMergeBuilder<T>;
+	prepend(): ScrollMergeBuilder<T>;
 }
 
 export interface DeepMergeBuilder<T> extends BaseBuilder<T, false> {
 	append(): DeepMergeBuilder<T>;
 	prepend(): DeepMergeBuilder<T>;
-	scroll(opts: ScrollPropOptions): DeepMergeBuilder<T>;
+	scroll(opts?: ScrollPropOptions): ScrollDeepMergeBuilder<T>;
+}
+
+export interface ScrollDeepMergeBuilder<T> extends BaseBuilder<T, false> {
+	readonly [BUILDER_SCROLL]: true;
+	append(): ScrollDeepMergeBuilder<T>;
+	prepend(): ScrollDeepMergeBuilder<T>;
 }
 
 export interface BaseBuilder<T, Lazy extends boolean = boolean> {
@@ -208,7 +244,7 @@ export interface PropBuilderState {
 	deferredGroup?: string | undefined;
 	mergeOptions?: MergePropOptions | undefined;
 	mergeDirection?: MergeIntent | undefined;
-	scrollOptions?: ScrollPropOptions | undefined;
+	scrollOptions?: StoredScrollOptions | undefined;
 	isDeferredOnce?: boolean | undefined;
 	isOptional?: boolean | undefined;
 	isAlways?: boolean | undefined;
@@ -223,6 +259,11 @@ export interface MergePropOptions {
 }
 
 export interface ScrollPropOptions {
+	pageName?: string;
+}
+
+/** Internal type for scroll options stored in builder state - pageName is guaranteed */
+export interface StoredScrollOptions {
 	pageName: string;
 }
 

@@ -72,6 +72,8 @@ export type {
 	PagePropsSchema,
 	PagePropsValues,
 	PropBuilder,
+	ScrollDeepMergeBuilder,
+	ScrollMergeBuilder,
 } from "./types";
 
 // =============================================================================
@@ -141,6 +143,20 @@ export function createInertia(config: CreateInertiaConfig) {
 
 		Object.defineProperty(definition, "schema", {
 			value: schema,
+			writable: false,
+			enumerable: false,
+		});
+
+		const scrollOptions: Record<string, { pageName: string }> = {};
+		for (const [key, builder] of Object.entries(schema)) {
+			const state = builder[BUILDER_STATE];
+			if (state.scrollOptions) {
+				scrollOptions[key] = state.scrollOptions;
+			}
+		}
+
+		Object.defineProperty(definition, "scrollOptions", {
+			value: scrollOptions,
 			writable: false,
 			enumerable: false,
 		});
@@ -292,11 +308,15 @@ async function resolvePageProps(
 
 	const urlParams = new URLSearchParams(new URL(requestUrl).search);
 
+	const hasMore = (values as Record<string, unknown>).$hasMore as
+		| Record<string, boolean>
+		| undefined;
+
 	for (const [propKey, builder] of Object.entries(schema)) {
 		const state = builder[BUILDER_STATE];
 		const value = values[propKey as keyof typeof values];
 
-		collectBuilderMetadata(propKey, state, urlParams, {
+		collectBuilderMetadata(propKey, state, urlParams, hasMore, {
 			deferredProps,
 			mergeProps,
 			prependProps,
@@ -458,13 +478,11 @@ function shapeErrors(
 	return allErrors;
 }
 
-/**
- * Collects builder metadata and populates the page collections.
- */
 function collectBuilderMetadata(
 	key: string,
 	meta: PropBuilderState,
 	urlParams: URLSearchParams,
+	hasMore: Record<string, boolean> | undefined,
 	collections: {
 		deferredProps: Record<string, string[]>;
 		mergeProps: string[];
@@ -521,10 +539,11 @@ function collectBuilderMetadata(
 		if (meta.scrollOptions) {
 			const pageName = meta.scrollOptions.pageName;
 			const currentPage = parseInt(urlParams.get(pageName) ?? "1", 10);
+			const propHasMore = hasMore?.[key] ?? false;
 			scrollProps[key] = {
 				pageName,
 				previousPage: currentPage > 1 ? currentPage - 1 : null,
-				nextPage: null,
+				nextPage: propHasMore ? currentPage + 1 : null,
 				currentPage,
 			};
 		}
@@ -540,10 +559,11 @@ function collectBuilderMetadata(
 		if (meta.scrollOptions) {
 			const pageName = meta.scrollOptions.pageName;
 			const currentPage = parseInt(urlParams.get(pageName) ?? "1", 10);
+			const propHasMore = hasMore?.[key] ?? false;
 			scrollProps[key] = {
 				pageName,
 				previousPage: currentPage > 1 ? currentPage - 1 : null,
-				nextPage: null,
+				nextPage: propHasMore ? currentPage + 1 : null,
 				currentPage,
 			};
 		}

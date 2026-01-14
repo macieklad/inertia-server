@@ -95,14 +95,13 @@ test.describe("Suite 8: Partial Reloads", () => {
 
 			await expect(page.getByText("Post #1:")).toBeVisible({ timeout: 30000 });
 
-			const initialCount = await page
-				.locator("[data-testid='card-header']")
-				.count();
-			expect(initialCount).toBe(10);
+			const postCards = page.locator("[data-testid='card-header']");
+			await expect(postCards).toHaveCount(10);
 
-			await page.getByRole("button", { name: "Load More" }).click();
+			await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+			await page.waitForTimeout(500);
 
-			await expect(page.locator("[data-testid='card-header']")).toHaveCount(20);
+			await expect(postCards).toHaveCount(20, { timeout: 10000 });
 
 			await expect(page.getByText("Post #1:")).toBeVisible();
 			await expect(page.getByText("Post #11:")).toBeVisible();

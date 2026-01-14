@@ -145,9 +145,6 @@ export const postsPage = definePage({
 	props: {
 		title: prop<string>(),
 		posts: mergedProp<Post[]>({ matchOn: "id" }).scroll({ pageName: "page" }),
-		currentPage: prop<number>(),
-		totalPages: prop<number>(),
-		hasMore: prop<boolean>(),
 	},
 });
 

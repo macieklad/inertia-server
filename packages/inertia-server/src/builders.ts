@@ -15,9 +15,16 @@ import type {
 	OncePropOptions,
 	PropBuilder,
 	PropBuilderState,
+	ScrollDeepMergeBuilder,
+	ScrollMergeBuilder,
 	ScrollPropOptions,
 } from "./types";
-import { BUILDER_LAZY, BUILDER_STATE, BUILDER_TYPE } from "./types";
+import {
+	BUILDER_LAZY,
+	BUILDER_SCROLL,
+	BUILDER_STATE,
+	BUILDER_TYPE,
+} from "./types";
 
 // =============================================================================
 // Public API
@@ -146,10 +153,33 @@ export function mergedProp<T>(opts?: MergePropOptions): MergeBuilder<T> {
 						mergeDirection: "prepend",
 					});
 				},
-				scroll(scrollOpts: ScrollPropOptions): MergeBuilder<T> {
-					return createMergeBuilder({
+				scroll(scrollOpts?: ScrollPropOptions): ScrollMergeBuilder<T> {
+					return createScrollMergeBuilder({
 						...currentMeta,
-						scrollOptions: scrollOpts,
+						scrollOptions: { pageName: scrollOpts?.pageName ?? "page" },
+					});
+				},
+			},
+			false,
+		);
+	};
+
+	const createScrollMergeBuilder = (
+		currentMeta: PropBuilderState,
+	): ScrollMergeBuilder<T> => {
+		return createScrollBuilder<T, ScrollMergeBuilder<T>>(
+			currentMeta,
+			{
+				append(): ScrollMergeBuilder<T> {
+					return createScrollMergeBuilder({
+						...currentMeta,
+						mergeDirection: "append",
+					});
+				},
+				prepend(): ScrollMergeBuilder<T> {
+					return createScrollMergeBuilder({
+						...currentMeta,
+						mergeDirection: "prepend",
 					});
 				},
 			},
@@ -199,10 +229,33 @@ export function deepMergedProp<T>(
 						mergeDirection: "prepend",
 					});
 				},
-				scroll(scrollOpts: ScrollPropOptions): DeepMergeBuilder<T> {
-					return createDeepMergeBuilder({
+				scroll(scrollOpts?: ScrollPropOptions): ScrollDeepMergeBuilder<T> {
+					return createScrollDeepMergeBuilder({
 						...currentMeta,
-						scrollOptions: scrollOpts,
+						scrollOptions: { pageName: scrollOpts?.pageName ?? "page" },
+					});
+				},
+			},
+			false,
+		);
+	};
+
+	const createScrollDeepMergeBuilder = (
+		currentMeta: PropBuilderState,
+	): ScrollDeepMergeBuilder<T> => {
+		return createScrollBuilder<T, ScrollDeepMergeBuilder<T>>(
+			currentMeta,
+			{
+				append(): ScrollDeepMergeBuilder<T> {
+					return createScrollDeepMergeBuilder({
+						...currentMeta,
+						mergeDirection: "append",
+					});
+				},
+				prepend(): ScrollDeepMergeBuilder<T> {
+					return createScrollDeepMergeBuilder({
+						...currentMeta,
+						mergeDirection: "prepend",
 					});
 				},
 			},
@@ -239,6 +292,29 @@ function createBuilder<T, B extends AnyBuilder<T>>(
 		[BUILDER_STATE]: meta,
 		[BUILDER_TYPE]: undefined as T,
 		[BUILDER_LAZY]: isLazy,
+		...methods,
+	} as B;
+}
+
+function createScrollBuilder<
+	T,
+	B extends ScrollMergeBuilder<T> | ScrollDeepMergeBuilder<T>,
+>(
+	meta: PropBuilderState,
+	methods: Omit<
+		B,
+		| typeof BUILDER_STATE
+		| typeof BUILDER_TYPE
+		| typeof BUILDER_LAZY
+		| typeof BUILDER_SCROLL
+	>,
+	isLazy: boolean,
+): B {
+	return {
+		[BUILDER_STATE]: meta,
+		[BUILDER_TYPE]: undefined as T,
+		[BUILDER_LAZY]: isLazy,
+		[BUILDER_SCROLL]: true,
 		...methods,
 	} as B;
 }
