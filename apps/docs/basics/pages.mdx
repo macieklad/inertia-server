@@ -382,8 +382,56 @@ is rendered and the prop prepared, no matter whether its loaded or not.
 
 ### Deferred props
 
+To defer a prop, you can use the `deferred()` method on the prop definition.
+
+```ts
+const page = definePage({
+  component: 'Home',
+  props: {
+    foo: prop<string>().deferred(),
+  },
+});
+```
+
+By default, all deferred props get fetched in one request after the initial page is rendered, but you can choose to fetch data in parallel by grouping props together.
+
+```ts
+const page = definePage({
+  component: 'Home',
+  props: {
+    permissions: prop<string[]>().deferred(),
+    teams: prop<string[]>().deferred('attributes'),
+    roles: prop<string[]>().deferred('attributes'),
+  },
+});
+```
+
+In the example above, the `teams` and `roles` props will be fetched in one request, while the permissions prop will be fetched in a separate request in parallel. Group names are arbitrary strings and can be anything you choose.
+
+On the client side, inertia provides the `Deferred` component to handle deferred props. It is not required with `inertia-server`, because we correctly type deferred props as optional, so you can
+just check for the value and show a loading state. If you need to
+differentiate between the loading state and a potential empty value, use the component though.
+
 ### Prop modifiers
-Always, once, optional
+
+When Inertia performs a request, it will determine which data is required and only then will it evaluate the closure. With prop modifiers, you can manually control this behavior.
+
+Use `optional()` method to specify that a prop should never be included unless explicitly requested using the `only` client option.
+
+On the reverse, you can use `always()` method to specify that a prop should always be included, even in partial reloads.
+
+To load a prop on the first request, and then to keep it in the cache, you can use `once()` method.
+
+```ts
+const page = definePage({
+  component: 'Home',
+  props: {
+    foo: prop<string>().optional(),
+    bar: prop<string>().always(),
+    baz: prop<string>().once(),
+  },
+});
+```
 
 ## Accessing other page object properties
 
