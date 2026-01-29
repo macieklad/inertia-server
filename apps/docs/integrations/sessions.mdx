@@ -1,4 +1,22 @@
 ---
 title: Sessions
-description: 'Handle session data for features like flashing'
+description: "Support session persistence for full inertia server experience"
 ---
+
+You may wish to send one-time data to your frontend that shouldn’t reappear when users navigate through browser history. Unlike regular props, flash data isn’t persisted in history state, making it ideal for success messages, newly created IDs, or other temporary values.
+
+Inertia supports flash messages out of the box, but you need to configure it to work with your session store. Configuring it is as simple as providing a flash adapter to the `createHelper` function.
+
+You have to instruct `inertia-server` how to get and set flash data in your session store.
+
+```ts
+const inertia = createHelper({
+  request,
+  flash: {
+    getAll: () => request.session.flash,
+    set: (data: Record<string, unknown>) => request.session.set('flash', data),
+  },
+});
+```
+
+

@@ -23,20 +23,19 @@
 				]
 			},
 			{
-				"group": "The Basics",
+				"group": "Concepts",
 				"pages": [
-					"basics/responses",
-					"basics/pages",
-					"basics/configuration",
-					"basics/testing"
+					"concepts/responses",
+					"concepts/pages",
+					"concepts/configuration",
+					"concepts/testing"
 				]
 			},
 			{
 				"group": "Integrations",
 				"pages": [
 					"integrations/sessions",
-					"integrations/ssr",
-					"integrations/bundling",
+					"integrations/frontend",
 					"integrations/elysia"
 				]
 			}

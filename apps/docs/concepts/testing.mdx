@@ -48,8 +48,6 @@ so there is no need to pass the `fetch` function every time.
 const inertia = createAppHelper(app);
 ```
 
-Otherwise we have to know how to issue more requests to your app, 
-
 ## Assertions
 
 `inertia-server` comes with a set of basic assertions to test your page. If they are not enough for you, see the `tap` helper.
@@ -83,7 +81,7 @@ await inertia(response)
   .has('createdAt', (date) => new Date(date) < new Date())
   .assert();
 ```
-<Note>`has` compares values deeply, but it's an strict equal check, so it will fail if the value is not exactly the same.</Note>
+<Note>`has` compares values deeply, but it's a strict equality check. It will fail if the value is not exactly the same.</Note>
 
 ### Missing Props
 

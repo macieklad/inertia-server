@@ -1,0 +1,154 @@
+---
+title: Frontend setup
+description: 'Wire your frontend and server together'
+---
+
+Your server will render your inertia pages to HTML. From there, your client
+setup must be able to load the necessary scripts and its dependencies. 
+
+This process is highly customisable and specific to your setup. We will use React and Vite as an example, and explain the process here to make it easier for you to set things up.
+
+<Note> 
+ If there is an `inertia-server` integration for your framework, setup may be already configured for you.
+</Note>
+
+## Step 1: Pick initial rendering strategy
+
+When you `inertia.render`, the resolved page is passed to the `render`
+function you provided when setting up `inertia-server`. Here, you can
+ encode the page to JSON and send it with some html markup so it can be hydrated on the client.
+
+ ```ts
+export function renderToHtml(
+	page: InertiaPage,
+): string {
+	return `<!DOCTYPE html><html><body><div id="app" data-page='${JSON.stringify(page)}'></div></body></html>`;
+}
+ ```
+
+You can enchance this setup further, and render the initial shell of your app with your framework's server-side rendering features.
+
+```ts
+export async function renderToHtml(
+	page: InertiaPage,
+): string {
+	const { renderToString } = await import("react-dom/server");
+	return `<!DOCTYPE html>${renderToString(<Root page={page} />)}`;
+}
+ ```
+
+The added benefit of this approach is that not only you improve the loading experience, but also you can write your server templates as  your framework's components.
+
+## Step 2: Prepare your inertia client entry
+
+On the client, you will initialise your inertia app according to the [official docs](https://inertiajs.com/docs/v2/installation/client-side-setup).
+
+For server side rednering, you will need to update your client entry to [hydrate the page](https://inertiajs.com/docs/v2/advanced/server-side-rendering#client-side-hydration) instead of rendering it
+
+## Step 3: Configure asset handling
+
+The tricky part after setting up your server and entry, is to coordinate your frontend assets with your server. If you render a page, you also have to send it's assets to the client - scripts, styles, images, etc.
+
+In simple cases, you can inline all of them in your root template,
+and make sure that you serve them from your server.
+
+```ts
+export function renderToHtml(
+	page: InertiaPage,
+): string {
+	return `<!DOCTYPE html>
+  <html>
+    <head>
+      <!-- Your assets -->
+      <script src="/assets/main.js"></script>
+    </head>
+    <body>
+      <div id="app" data-page='${JSON.stringify(page)}'></div>
+    </body>
+  </html>`;
+}
+```
+
+This quickly becomes impractical, as your app grows and you have more assets.
+
+The easiest way is to setup Vite to handle your frontend app. When you build it, it will generate a manifest file - a JSON object that maps your entrypoints to their corresponding assets. You then load it on the client and everything happens automatically.
+
+In the development mode, you can use the Vite dev server to serve your assets directly. But in production, you will need to serve them from your server.
+
+<Note>
+ This config is partial to showcase the key parts. See examples in the
+ `inertia-server` repo for a complete reference.
+ </Note>
+
+```ts Vite config
+export default defineConfig(({ command }) => ({
+	base: command === "build" ? "/assets/" : "/",
+	build: {
+		outDir: "dist/client",
+		manifest: true,
+		emptyOutDir: true,
+		rollupOptions: {
+			input: "src/ui/main.tsx",
+		},
+	},
+	plugins: [react(), tsconfigPaths(), tailwindcss()],
+}));
+```
+
+```ts 
+export async function renderToHtml(
+	page: InertiaPage,
+	manifest: Manifest | null,
+): string {
+	const { renderToString } = await import("react-dom/server");
+  // We pass manifest to the root component so it can be used to load the assets
+	return `<!DOCTYPE html>${renderToString(<Root page={page} manifest={manifest} />)}`;
+}
+```
+
+```ts Root template
+
+export default function Root({ page, manifest }: RootProps) {
+	const isDev = !manifest;
+	const entrypoint = "src/ui/main.tsx";
+
+	const entrypointUrl = manifest?.[entrypoint]?.file
+		? `/assets/${manifest[entrypoint].file}`
+		: null;
+
+	const cssFiles = manifest?.[entrypoint]?.css ?? [];
+
+	return (
+		<html lang="en">
+			<head>
+				<meta charSet="UTF-8" />
+				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+				<title>Inertia Server Example</title>
+				{cssFiles.map((css) => (
+					<link key={css} rel="stylesheet" href={`/assets/${css}`} />
+				))}
+			</head>
+			<body>
+				<div id="app" data-page={JSON.stringify(page)} />
+				{isDev ? (
+					<>
+						<script type="module" src={`${VITE_DEV_SERVER_URL}/@vite/client`} />
+						<script
+							type="module"
+							dangerouslySetInnerHTML={{ __html: getReactRefreshPreamble() }}
+						/>
+						<script type="module" src={`${VITE_DEV_SERVER_URL}/src/ui/main.tsx`} />
+					</>
+				) : (
+					entrypointUrl && <script type="module" src={entrypointUrl} />
+				)}
+			</body>
+		</html>
+	);
+}
+```
+
+
+
+
+
