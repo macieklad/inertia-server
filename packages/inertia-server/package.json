@@ -38,8 +38,7 @@
 		"build": "tsc",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit",
-		"prepack": "node ./scripts/sync-root-readme.mjs prepack",
-		"postpack": "node ./scripts/sync-root-readme.mjs postpack"
+		"prepack": "node ./scripts/sync-root-readme.mjs"
 	},
 	"dependencies": {
 		"@inertiajs/core": "^2.3.8"
