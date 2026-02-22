@@ -1,118 +1,94 @@
-# inertia-server
+<p align="center">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./apps/docs/assets/logo/dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="./apps/docs/assets/logo/light.svg">
+      <img alt="Inertia Server logo" src="./apps/docs/assets/logo/light.svg">
+    </picture>
+</p>
 
-> [!NOTE]
-> Work in progress, core working, needs refactoring and docs
+<p align="center">
+Integrate Inertia.js with any modern Javascript runtime and server.
+</p>
 
-TypeScript library for server-side Inertia.js integration with Elysia (and other frameworks).
-
-## What is Inertia.js?
-
-Inertia lets you build single-page apps without SPA complexity. You write server routes that return components from your client framework (React, Vue, Svelte). Inertia handles the routing and state management on the client side.
-
-`inertia-server` provides the server tooling for Inertia.js in TypeScript, with built-in support for:
-
-- **Props management**: Deferred, optional, always, and merged props
-- **Error handling**: Error bags with per-field validation feedback
-- **Flash messages**: One-time messages across redirects
-- **Partial reloads**: Only rerender specific components
-- **Version control**: Automatic version conflict detection
-- **Full type safety**: TypeScript inference end-to-end
-
-## Quick Start
-
-### Install
-
-```bash
-bun add inertia-server
-```
-
-### Basic Usage
-
-```typescript
-import { Elysia } from "elysia";
-import { createInertia, prop } from "inertia-server";
-import { elysiaAdapter } from "inertia-server/elysia";
-
-const { definePage, createHelper } = createInertia({
-  version: "1.0.0",
-  render: (page) => renderToString(<Root page={page} />),
-});
-
-const homePage = definePage("Home", {
-  title: prop.string(),
-  users: prop.deferred(async () => fetchUsers()),
-});
-
-const app = new Elysia();
-const inertia = elysiaAdapter(createHelper);
-
-app.use(inertia).get("/", ({ inertia }) => {
-  return inertia.render(homePage({ title: "Welcome" }));
-});
-
-app.listen(3000);
-```
+<p align="center">
+  <a href="https://www.npmjs.com/package/inertia-server">
+    <img alt="npm version" src="https://img.shields.io/npm/v/inertia-server?label=inertia-server&logo=npm">
+  </a>
+</p>
 
 ## Documentation
 
-Full docs at https://inertia-server.vercel.app
+Full documentation is available at [https://inertiaserver.mintlify.app](https://inertiaserver.mintlify.app)
 
-## Monorepo Structure
+## What is Inertia.js?
 
-```
-packages/inertia-server/   Main library
-apps/example-elysia/       Full example with tests
-apps/docs/                 Mintlify docs site
-```
+[Inertia](https://inertiajs.com/) lets you build single-page apps without SPA complexity. You write server routes that return components from your client framework (React, Vue, Svelte). Inertia handles the routing and state management on the client side.
 
-## Development
+## Why Inertia Server?
 
-### Prerequisites
+JavaScript backend ecosystem was lacking a frontend solution that is backend centered.
+Inertia protocol, while quite simple, requires you to write a lot of boilerplate code to get started.
 
-- Bun 1.3.3+
-- Node.js 18+
+`inertia-server` provides framework agnostic server tooling for Inertia.js. It makes interaction with the library type-safe, seamless, and more mature. Use a ready-made adapter for your framework of choice, or create your own. Test your application using your favourite testing library. `inertia-server` is here to help.
 
-### Commands
+### Example
 
-```bash
-# Install dependencies
-bun install
+```ts
+import { createInertia, prop, PageProps } from 'inertia-server';
 
-# Development (runs example app)
-bun run dev
+const { definePage, createHelper } = createInertia({
+  version: '1.0.0',
+  render: (page) => renderToString(<Root page={page} />),
+});
 
-# Run unit tests
-bun run test
+const homePage = definePage({
+  component: 'Home',
+  props: {
+    title: prop<string>(),
+    description: prop<string>().deferred(),
+  },
+});
 
-# Run E2E tests
-bun run test:e2e
+export type HomePageProps = PageProps<typeof homePage>;
 
-# Type checking
-bun run typecheck
+// Server agnostic request handler, with integrations you don't need createHelper
+const inertia = createHelper({ request });
+return inertia.render(
+  homePage({ title: 'Welcome', description: () => 'Hello, World!' })
+);
 
-# Linting
-bun run lint
-bun run lint:fix
+// On the client (react example):
+import { PageProps } from 'inertia-server';
+import type { HomePageProps } from './pages/home';
 
-# Build the package
-bun run build:pkg
-
-# Docs (local)
-bun run dev:docs
+export function Page({ title, description }: HomePageProps) {
+  return <>
+    <h1>{title}</h1>
+    {description ? <p>{description}</p> : <p>Loading description...</p>}
+  </>;
+}
 ```
 
 ## Contributing
 
-This repo uses [Changesets](https://github.com/changesets/changesets) for versioning and changelog management.
+Contributions are more than welcome.
 
-When contributing:
+This monorepo uses bun, biome, and [Changesets](https://github.com/changesets/changesets) for versioning and changelog management. To start, clone the repository and run:
 
-1. Make your changes
-2. Run `bun run changeset` to document the change
-3. Push a PR
+```bash
+bun install
+bun build
+```
 
-Changesets are automatically released via GitHub Actions.
+You can now start exploring the examples or the core `inertia-server` package. To run the examples and docs, execute:
 
-## License
+```bash
+# Elysia example, best for testing visually
+bun run dev
+# Hono example, best for testing with a real server
+bun run dev:hono
+# Docs
+bun run dev:docs
+```
 
-MIT
+When everything is running, pick up any nested README's and start working on what interests you. You coding agents are provided with the AGENTS.MD, so ask them for help ;)

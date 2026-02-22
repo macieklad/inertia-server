@@ -17,6 +17,10 @@
 			"types": "./dist/elysia.d.ts",
 			"import": "./dist/elysia.js"
 		},
+		"./hono": {
+			"types": "./dist/hono.d.ts",
+			"import": "./dist/hono.js"
+		},
 		"./types": {
 			"types": "./dist/types.d.ts",
 			"import": "./dist/types.js"
@@ -33,18 +37,30 @@
 	"scripts": {
 		"build": "tsc",
 		"test": "bun test",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"prepack": "node ./scripts/sync-root-readme.mjs prepack",
+		"postpack": "node ./scripts/sync-root-readme.mjs postpack"
 	},
 	"dependencies": {
 		"@inertiajs/core": "^2.3.8"
 	},
 	"peerDependencies": {
-		"elysia": ">=1.0.0"
+		"elysia": ">=1.0.0",
+		"hono": ">=4.0.0"
+	},
+	"peerDependenciesMeta": {
+		"elysia": {
+			"optional": true
+		},
+		"hono": {
+			"optional": true
+		}
 	},
 	"devDependencies": {
 		"@types/bun": "latest",
 		"elysia": "^1.4.21",
 		"@elysiajs/eden": "^1.4.6",
+		"hono": "^4.10.4",
 		"typescript": "^5.9.3"
 	}
 }

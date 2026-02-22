@@ -12,10 +12,12 @@
 	},
 	"scripts": {
 		"dev": "FORCE_COLOR=1 bun --elide-lines 0 --filter example-elysia dev",
+		"dev:hono": "FORCE_COLOR=1 bun --elide-lines 0 --filter example-hono dev",
 		"dev:docs": "bun --elide-lines 0 --filter docs dev",
 		"build": "bun --filter inertia-server build",
 		"test": "bun --filter inertia-server test",
 		"test:e2e": "bun --filter example-elysia test:e2e",
+		"test:e2e:hono": "bun --filter example-hono test:e2e",
 		"typecheck": "tsc --build",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",

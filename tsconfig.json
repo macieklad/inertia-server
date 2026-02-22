@@ -2,6 +2,7 @@
 	"files": [],
 	"references": [
 		{ "path": "./packages/inertia-server" },
-		{ "path": "./apps/example-elysia" }
+		{ "path": "./apps/example-elysia" },
+		{ "path": "./apps/example-hono" }
 	]
 }
