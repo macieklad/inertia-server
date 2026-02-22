@@ -188,7 +188,7 @@ test.describe("Suite 3: Forms & Validation", () => {
 			).not.toBeVisible();
 		});
 
-		test("submitting one form doesn't clear other form's errors", async ({
+		test("submitting one form replaces errors with that form's bag", async ({
 			page,
 		}) => {
 			await page.goto("/error-bags");
@@ -218,7 +218,7 @@ test.describe("Suite 3: Forms & Validation", () => {
 					.locator("form")
 					.filter({ hasText: "Login" })
 					.getByText("Please enter a valid email"),
-			).toBeVisible();
+			).not.toBeVisible();
 			await expect(
 				page
 					.locator("form")

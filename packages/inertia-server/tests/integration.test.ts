@@ -851,6 +851,36 @@ describe("Error bags", () => {
 			.assert();
 	});
 
+	test("error bag header excludes other bags", async () => {
+		const mockFlashAdapter: FlashAdapter = {
+			getAll: () => ({
+				_inertia_errors: {
+					createUser: { name: "Name is required" },
+					login: { email: "Email is invalid" },
+				},
+			}),
+			set: () => {},
+		};
+
+		const helper = await defaultInertia.createHelper({
+			request: new Request("http://localhost/form", {
+				headers: {
+					"X-Inertia": "true",
+					"X-Inertia-Version": "1.0.0",
+					"X-Inertia-Error-Bag": "createUser",
+				},
+			}),
+			flash: mockFlashAdapter,
+		});
+
+		const response = await helper.render(pages.form({ title: "Contact" }));
+
+		await inertia(response)
+			.has("errors.createUser", { name: "Name is required" })
+			.missing("errors.login")
+			.assert();
+	});
+
 	test("returns empty errors when no errors exist", async () => {
 		const mockFlashAdapter: FlashAdapter = {
 			getAll: () => ({}),

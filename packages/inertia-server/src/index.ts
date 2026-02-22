@@ -244,10 +244,9 @@ async function resolvePageProps<S extends PagePropsSchema>(
 	const exceptOnceProps = new Set(requestOptions.exceptOnceProps);
 
 	const urlParams = new URLSearchParams(new URL(requestUrl).search);
-	const paginatedPropsWithNextPage =
-		"$hasMore" in values
-			? (values.$hasMore as Record<string, boolean>)
-			: undefined;
+	const paginatedPropsWithNextPage = hasMoreMarker(values)
+		? values.$hasMore
+		: undefined;
 
 	for (const [propKey, builder] of Object.entries(schema)) {
 		const propMetadata = builder[BUILDER_STATE];
@@ -394,7 +393,7 @@ function shouldResolveProp(params: {
  * Shapes errors based on the errorBag header.
  * - No bag specified: return all known bags.
  * - Bag specified and missing: return empty errors.
- * - Bag specified and present: keep all bags so existing form errors persist.
+ * - Bag specified and present: return only that bag.
  */
 function shapeErrors(
 	allErrors: Record<string, Record<string, string>>,
@@ -406,10 +405,16 @@ function shapeErrors(
 
 	if (errorBag) {
 		const bagErrors = allErrors[errorBag];
-		return bagErrors ? allErrors : {};
+		return bagErrors ? { [errorBag]: bagErrors } : {};
 	}
 
 	return allErrors;
+}
+
+function hasMoreMarker<S extends PagePropsSchema>(
+	values: PagePropsValues<S>,
+): values is PagePropsValues<S> & { $hasMore: Record<string, boolean> } {
+	return "$hasMore" in values;
 }
 
 type PageMetadata = Required<

@@ -1,14 +1,8 @@
 /**
- * Inertia.js Request Header Parsing
- *
- * Parses all X-Inertia-* headers from incoming requests.
+ * Inertia protocol defines a set of headers that are used to communicate with the client.
+ * This module captures those constants and provides parsing utilities for simplicity.
  */
-
 import type { InertiaRequestOptions, MergeIntent } from "./types";
-
-// =============================================================================
-// Header Constants
-// =============================================================================
 
 export const HEADER_INERTIA = "x-inertia";
 export const HEADER_VERSION = "x-inertia-version";
@@ -21,10 +15,6 @@ export const HEADER_EXCEPT_ONCE_PROPS = "x-inertia-except-once-props";
 export const HEADER_SCROLL_MERGE_INTENT =
 	"x-inertia-infinite-scroll-merge-intent";
 export const HEADER_PURPOSE = "purpose";
-
-// =============================================================================
-// Main Parser
-// =============================================================================
 
 /**
  * Parses all Inertia request headers from a Request object.
@@ -55,87 +45,9 @@ export function parseInertiaHeaders(request: Request): InertiaRequestOptions {
 		scrollMergeIntent: parseMergeIntent(
 			headers.get(HEADER_SCROLL_MERGE_INTENT),
 		),
-		isPrefetch: headers.get(HEADER_PURPOSE) === "prefetch",
+		isPrefetch: headers.get(HEADER_PURPOSE)?.toLowerCase() === "prefetch",
 	};
 }
-
-// =============================================================================
-// Request Inspection Utilities
-// =============================================================================
-
-/**
- * Checks if the request is a partial reload request.
- */
-export function isPartialReload(headers: InertiaRequestOptions): boolean {
-	return headers.partialComponent !== null;
-}
-
-/**
- * Checks if the request is for a specific component (partial reload validation).
- */
-export function isPartialReloadFor(
-	headers: InertiaRequestOptions,
-	component: string,
-): boolean {
-	return headers.partialComponent === component;
-}
-
-/**
- * Determines which props should be included based on partial reload headers.
- *
- * @param options - Parsed Inertia headers
- * @param availableProps - All available prop keys
- * @param component - The current page component name
- * @returns Array of prop keys to include
- */
-export function getPropsToInclude(
-	options: InertiaRequestOptions,
-	availableProps: string[],
-	component: string,
-): string[] {
-	if (!options.partialComponent || options.partialComponent !== component) {
-		return availableProps;
-	}
-
-	let result = availableProps;
-
-	if (options.partialExcept.length > 0) {
-		result = result.filter((key) => !options.partialExcept.includes(key));
-	} else if (options.partialData.length > 0) {
-		result = result.filter((key) => options.partialData.includes(key));
-	}
-
-	// Always include 'errors' prop
-	if (!result.includes("errors") && availableProps.includes("errors")) {
-		result.push("errors");
-	}
-
-	return result;
-}
-
-/**
- * Checks if a once prop should be skipped (already loaded on client).
- */
-export function shouldSkipOnceProp(
-	headers: InertiaRequestOptions,
-	propKey: string,
-): boolean {
-	return headers.exceptOnceProps.includes(propKey);
-}
-
-/**
- * Checks if a prop should be reset before merging.
- */
-export function shouldResetProp(
-	headers: InertiaRequestOptions,
-	propKey: string,
-): boolean {
-	return headers.resetProps.includes(propKey);
-}
-
-// =============================================================================
-// Internal Helpers
-// =============================================================================
 
 function parseCommaSeparated(value: string | null): string[] {
 	if (!value) return [];

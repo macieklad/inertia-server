@@ -29,7 +29,7 @@ export type ErrorBags =
 		: InertiaServer.ErrorBags;
 
 export interface CreateInertiaConfig {
-	version: string | (() => string | Promise<string>);
+	version: string | (() => string);
 	render: (page: InertiaPage) => string | Promise<string>;
 	encryptHistory?: boolean;
 }
