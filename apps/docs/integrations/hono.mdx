@@ -1,0 +1,72 @@
+---
+title: Hono
+description: 'Using `inertia-server` with Hono'
+---
+
+Use the Hono adapter to inject an `inertia` helper into request context.
+
+## Import
+
+```ts
+import { honoAdapter } from "inertia-server/hono";
+```
+
+## Basic setup
+
+Remember to configure your helpers according to the installation guide [installation](/getting-started/installation)
+
+```ts
+import { Hono } from "hono";
+import { honoAdapter } from "inertia-server/hono";
+import { createHelper } from "./inertia";
+
+const app = new Hono();
+
+app.use("*", honoAdapter(createHelper));
+
+app.get("/", (c) => {
+  return c.get("inertia").render(homePage({ title: "Dashboard" }));
+});
+```
+
+## Setup with flash/session support
+
+If you use `inertia.flash(...)` or `inertia.errors(...)`, provide a flash adapter.
+Your session implementation may vary, in the example we are using a pseudo-code
+for a simple cookie based sessions.
+
+```ts
+import { Hono } from "hono";
+import { honoAdapter } from "inertia-server/hono";
+import { createHelper } from "./inertia";
+import { sessionStore } from "./session";
+
+const app = new Hono();
+
+app.use("*", async (c, next) => {
+  const sessionId = sessionStore.getSessionId(c.req.raw);
+  c.set("sessionId", sessionId);
+  await next();
+  c.header("Set-Cookie", sessionStore.createCookieHeader(sessionId));
+});
+
+app.use(
+  "*",
+  honoAdapter(createHelper, (c) => ({
+    getAll: () => sessionStore.getFlash(c.get("sessionId")),
+    set: (data) => sessionStore.setFlash(c.get("sessionId"), data),
+  })),
+);
+```
+
+## Route usage
+
+After middleware is attached, handlers can use `c.get("inertia")`.
+
+```ts
+app.post("/login", (c) => {
+  const inertia = c.get("inertia");
+  inertia.flash("success", "Logged in");
+  return inertia.redirect("/dashboard");
+});
+```

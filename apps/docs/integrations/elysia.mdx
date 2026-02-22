@@ -2,3 +2,69 @@
 title: Elysia
 description: 'Using `inertia-server` with Elysia'
 ---
+
+Use the Elysia adapter to inject an `inertia` helper into route context.
+
+## Import
+
+```ts
+import { elysiaAdapter } from "inertia-server/elysia";
+```
+
+## Basic setup
+
+Remember to configure your helpers according to the installation guide [installation](/getting-started/installation)
+
+```ts
+import { Elysia } from "elysia";
+import { elysiaAdapter } from "inertia-server/elysia";
+import { createHelper } from "./inertia";
+
+const app = new Elysia()
+  .use(elysiaAdapter(createHelper))
+  .get("/", ({ inertia }) => {
+    return inertia.render(homePage({ title: "Dashboard" }));
+  });
+```
+
+## Setup with flash/session support
+
+If you use `inertia.flash(...)` or `inertia.errors(...)`, provide a flash adapter.
+Your session implementation may vary, in the example we are using a pseudo-code
+for a simple cookie based sessions.
+
+```ts
+import { Elysia } from "elysia";
+import { elysiaAdapter } from "inertia-server/elysia";
+import { createHelper } from "./inertia";
+import { sessionStore } from "./session";
+
+const app = new Elysia()
+  .derive((ctx) => ({
+    sessionId: sessionStore.getSessionId(ctx.request),
+  }))
+  .use(
+    elysiaAdapter(createHelper, (ctx) => ({
+      getAll: () => sessionStore.getFlash(ctx.sessionId),
+      set: (data) => {
+        sessionStore.setFlash(ctx.sessionId, data);
+      },
+    })),
+  )
+  .onAfterHandle((ctx) => {
+    ctx.set.headers["Set-Cookie"] = sessionStore.createCookieHeader(
+      ctx.sessionId,
+    );
+  });
+```
+
+## Route usage
+
+Once attached, `inertia` is available in your handlers:
+
+```ts
+app.post("/users", ({ inertia }) => {
+  inertia.flash("success", "User created");
+  return inertia.redirect("/users");
+});
+```

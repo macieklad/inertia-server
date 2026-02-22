@@ -134,6 +134,20 @@ app
   });
 ```
 
+```typescript hono
+import { Hono } from "hono";
+import { honoAdapter } from "inertia-server/hono";
+import { createHelper } from "./inertia";
+
+const app = new Hono();
+
+app.use("*", honoAdapter(createHelper));
+
+app.get("/", (c) => {
+  return c.get("inertia").render(homePage({ title: "Hello" }));
+});
+```
+
 ## Step 5: Setup inertia on the client
 
 [Follow the official documentation](https://inertiajs.com/docs/v2/installation/client-side-setup) for your framework of choice.

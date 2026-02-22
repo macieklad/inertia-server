@@ -11,14 +11,16 @@
 		"dark": "/assets/logo/dark.svg",
 		"light": "/assets/logo/light.svg"
 	},
-	"favicon": "/favicon.svg",
+	"favicon": {
+		"light": "/favicon.svg",
+		"dark": "/favicon.svg"
+	},
 	"navigation": {
 		"pages": [
 			{
 				"group": "Getting Started",
 				"pages": [
 					"getting-started/introduction",
-					"getting-started/quickstart",
 					"getting-started/installation"
 				]
 			},
@@ -32,12 +34,12 @@
 				]
 			},
 			{
+				"group": "Configuration",
+				"pages": ["integrations/sessions", "integrations/frontend"]
+			},
+			{
 				"group": "Integrations",
-				"pages": [
-					"integrations/sessions",
-					"integrations/frontend",
-					"integrations/elysia"
-				]
+				"pages": ["integrations/elysia", "integrations/hono"]
 			}
 		]
 	}

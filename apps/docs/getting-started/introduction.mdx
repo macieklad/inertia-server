@@ -74,11 +74,14 @@ export function Page({ title, user, stats }: PageProps<typeof homePage>) {
 
 ## Next Steps
 
-<CardGroup cols={2}>
-  <Card title="Quick Start" icon="rocket" href="/quickstart">
-    Get up and running in 5 minutes
-  </Card>
+<CardGroup cols={3}>
   <Card title="Installation" icon="download" href="/installation">
     Detailed installation instructions
+  </Card>
+  <Card title="Elysia Adapter" icon="plug" href="/integrations/elysia">
+    Connect inertia helpers to Elysia routes
+  </Card>
+  <Card title="Hono Adapter" icon="plug" href="/integrations/hono">
+    Connect inertia helpers to Hono routes
   </Card>
 </CardGroup>
