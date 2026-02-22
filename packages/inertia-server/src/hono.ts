@@ -11,13 +11,13 @@ export function honoAdapter(
 	createHelper: CreateHelperFn,
 	createFlashAdapter?: (ctx: Context) => FlashAdapter,
 ): MiddlewareHandler {
-	return async (ctx, next) => {
+	return async function inertiaMiddleware(ctx, next) {
 		const inertia = await createHelper({
 			request: ctx.req.raw,
 			flash: createFlashAdapter?.(ctx),
 		});
 
 		ctx.set("inertia", inertia);
-		await next();
+		return next();
 	};
 }
