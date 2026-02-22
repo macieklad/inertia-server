@@ -1,9 +1,9 @@
 /**
- * Inertia.js Prop Builders
- *
- * Composable builder system for defining page props with type-safe chaining.
+ * Builders expose an API to type-safely create any property configuration
+ * available in  the Inertia protocol. Users define their pages by providing
+ * prop definitions using builders. Builders encode that state into an object
+ * that can be serialized into valid page responses.
  */
-
 import type {
 	AnyBuilder,
 	DeepMergeBuilder,
@@ -25,10 +25,6 @@ import {
 	BUILDER_STATE,
 	BUILDER_TYPE,
 } from "./types";
-
-// =============================================================================
-// Public API
-// =============================================================================
 
 /**
  * Creates a basic prop builder.
@@ -119,8 +115,6 @@ export function prop<T>(): PropBuilder<T> {
 /**
  * Creates a merge prop builder for array merging on navigation.
  *
- * @param opts - Merge options including matchOn for item matching
- *
  * @example
  * ```ts
  * mergedProp<Post[]>({ matchOn: "id" })           // Append (default)
@@ -192,8 +186,6 @@ export function mergedProp<T>(opts?: MergePropOptions): MergeBuilder<T> {
 
 /**
  * Creates a deep merge prop builder for nested object merging.
- *
- * @param opts - Merge options including matchOn for nested item matching
  *
  * @example
  * ```ts
@@ -272,10 +264,6 @@ export function deepMergedProp<T>(
 export function isBuilder(value: unknown): value is AnyBuilder {
 	return typeof value === "object" && value !== null && BUILDER_STATE in value;
 }
-
-// =============================================================================
-// Internal Implementation
-// =============================================================================
 
 /**
  * Creates a builder object with the given metadata.

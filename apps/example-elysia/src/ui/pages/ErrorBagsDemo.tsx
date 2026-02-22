@@ -46,7 +46,7 @@ function LoginForm({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		post("/error-bags/form1");
+		post("/error-bags/form1", { errorBag: "login" });
 	};
 
 	return (
@@ -117,7 +117,7 @@ function CreateUserForm({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		post("/error-bags/form2");
+		post("/error-bags/form2", { errorBag: "createUser" });
 	};
 
 	return (

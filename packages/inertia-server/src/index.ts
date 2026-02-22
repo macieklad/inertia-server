@@ -18,7 +18,6 @@ import {
 	type InertiaPage,
 	type InertiaPageContext,
 	type InertiaPageDefinition,
-	type InertiaPageOnceProps,
 	type InertiaPageScrollProps,
 	type InertiaRequestOptions,
 	type PageDefinitionFnOptions,
@@ -69,43 +68,6 @@ export type {
 	ScrollMergeBuilder,
 } from "./types";
 
-// =============================================================================
-// Inertia Factory
-// =============================================================================
-
-/**
- * Creates an Inertia plugin and definePage function using the provided adapter.
- *
- * The adapter is responsible for creating the framework-specific plugin that
- * injects the `inertia` helper into the request context.
- *
- * @param config - Inertia configuration
- * @returns Object with definePage function and createHelper factory
- *
- * @example
- * ```ts
- * const { definePage, createHelper } = createInertia({
- *   version: "1.0.0",
- *   render: (page) => renderToString(<Root page={page} />),
- * });
- *
- * const postsPage = definePage({
- *   component: "Posts",
- *   props: {
- *     title: prop<string>(),
- *     posts: merge<Post[]>({ matchOn: "id" }),
- *   },
- * });
- *
- * // URL is automatically injected from the current request
- * app.use(plugin).get("/posts", ({ inertia }) => {
- *   return inertia.render(postsPage({
- *     title: "All Posts",
- *     posts: await getPosts(),
- *   }));
- * });
- * ```
- */
 export function createInertia(config: CreateInertiaConfig) {
 	const definePage: DefinePageFn = <
 		S extends PagePropsSchema,
@@ -124,7 +86,10 @@ export function createInertia(config: CreateInertiaConfig) {
 				schema,
 				values,
 				options: renderOptions,
-				version: getVersionSync(),
+				version:
+					typeof config.version === "function"
+						? config.version()
+						: config.version,
 			};
 		}) as InertiaPageDefinition<S, RS>;
 
@@ -243,25 +208,8 @@ export function createInertia(config: CreateInertiaConfig) {
 		return inertia;
 	};
 
-	/**
-	 * Gets the version synchronously for definePage.
-	 * Throws if an async version resolver is used.
-	 */
-	function getVersionSync(): string {
-		if (typeof config.version === "string") {
-			return config.version;
-		}
-		throw new Error(
-			"Cannot use async version resolver with definePage. Use a string version or resolve the version before calling the page function.",
-		);
-	}
-
 	return { definePage, createHelper };
 }
-
-// =============================================================================
-// Internal: Page Props Resolution
-// =============================================================================
 
 /**
  * Resolves a page resolution context into a fully resolved InertiaPage.
@@ -277,52 +225,52 @@ async function resolvePageProps<S extends PagePropsSchema>(
 	const { component, schema, values, options, version } = context;
 
 	const resolvedProps: Record<string, unknown> = {};
-	const deferredProps: Record<string, string[]> = {};
-	const mergeProps: string[] = [];
-	const prependProps: string[] = [];
-	const deepMergeProps: string[] = [];
-	const matchPropsOn: string[] = [];
-	const scrollProps: Record<string, InertiaPageScrollProps> = {};
-	const onceProps: Record<string, InertiaPageOnceProps> = {};
+	const pageMetadata: PageMetadata = {
+		deferredProps: {},
+		mergeProps: [],
+		prependProps: [],
+		deepMergeProps: [],
+		matchPropsOn: [],
+		scrollProps: {},
+		onceProps: {},
+	};
 
 	const isPartialReload =
 		requestOptions.partialComponent !== null &&
 		requestOptions.partialComponent === component;
 
-	const partialDataSet = new Set(requestOptions.partialData);
-	const partialExceptSet = new Set(requestOptions.partialExcept);
-	const exceptOncePropsSet = new Set(requestOptions.exceptOnceProps);
+	const partialProps = new Set(requestOptions.partialData);
+	const partialExceptProps = new Set(requestOptions.partialExcept);
+	const exceptOnceProps = new Set(requestOptions.exceptOnceProps);
 
 	const urlParams = new URLSearchParams(new URL(requestUrl).search);
-	const hasMore =
+	const paginatedPropsWithNextPage =
 		"$hasMore" in values
 			? (values.$hasMore as Record<string, boolean>)
 			: undefined;
 
 	for (const [propKey, builder] of Object.entries(schema)) {
-		const state = builder[BUILDER_STATE];
+		const propMetadata = builder[BUILDER_STATE];
 		const value = values[propKey as keyof typeof values];
 
-		collectBuilderMetadata(propKey, state, urlParams, hasMore, {
-			deferredProps,
-			mergeProps,
-			prependProps,
-			deepMergeProps,
-			matchPropsOn,
-			scrollProps,
-			onceProps,
+		parsePropIntoPageMetadata({
+			propKey,
+			propMetadata,
+			urlParams,
+			paginatedPropsWithNextPage,
+			pageMetadata,
 		});
 
-		const shouldInclude = shouldIncludeProp(
+		const shouldPropResolve = shouldResolveProp({
 			propKey,
-			state,
+			propMetadata,
 			isPartialReload,
-			partialDataSet,
-			partialExceptSet,
-			exceptOncePropsSet,
-		);
+			partialProps,
+			partialExceptProps,
+			exceptOnceProps,
+		});
 
-		if (shouldInclude) {
+		if (shouldPropResolve) {
 			const resolvedValue =
 				typeof value === "function"
 					? await (value as () => unknown | Promise<unknown>)()
@@ -331,14 +279,12 @@ async function resolvePageProps<S extends PagePropsSchema>(
 		}
 	}
 
-	// Handle errors from flash (for redirect-based validation flow)
 	const flashedErrors = flash._inertia_errors as
 		| Record<string, Record<string, string>>
 		| undefined;
 	const allErrors = { ...flashedErrors, ...stagedErrors };
 	resolvedProps.errors = shapeErrors(allErrors, requestOptions.errorBag);
 
-	// Add flash data (excluding internal _inertia_errors)
 	const { _inertia_errors, ...userFlash } = flash;
 	resolvedProps.flash = userFlash;
 
@@ -356,19 +302,23 @@ async function resolvePageProps<S extends PagePropsSchema>(
 		page.clearHistory = options.clearHistory;
 	}
 
-	// Deferred/once metadata only on initial load (prevents infinite fetch loops)
 	if (!isPartialReload) {
-		if (Object.keys(deferredProps).length > 0)
-			page.deferredProps = deferredProps;
-		if (Object.keys(onceProps).length > 0) page.onceProps = onceProps;
+		if (Object.keys(pageMetadata.deferredProps).length > 0)
+			page.deferredProps = pageMetadata.deferredProps;
+		if (Object.keys(pageMetadata.onceProps).length > 0)
+			page.onceProps = pageMetadata.onceProps;
 	}
 
-	// Merge metadata always sent (needed for client-side merging)
-	if (mergeProps.length > 0) page.mergeProps = mergeProps;
-	if (prependProps.length > 0) page.prependProps = prependProps;
-	if (deepMergeProps.length > 0) page.deepMergeProps = deepMergeProps;
-	if (matchPropsOn.length > 0) page.matchPropsOn = matchPropsOn;
-	if (Object.keys(scrollProps).length > 0) page.scrollProps = scrollProps;
+	if (pageMetadata.mergeProps.length > 0)
+		page.mergeProps = pageMetadata.mergeProps;
+	if (pageMetadata.prependProps.length > 0)
+		page.prependProps = pageMetadata.prependProps;
+	if (pageMetadata.deepMergeProps.length > 0)
+		page.deepMergeProps = pageMetadata.deepMergeProps;
+	if (pageMetadata.matchPropsOn.length > 0)
+		page.matchPropsOn = pageMetadata.matchPropsOn;
+	if (Object.keys(pageMetadata.scrollProps).length > 0)
+		page.scrollProps = pageMetadata.scrollProps;
 
 	return page;
 }
@@ -376,20 +326,27 @@ async function resolvePageProps<S extends PagePropsSchema>(
 /**
  * Determines if a prop should be included in the response based on request options and builder state.
  */
-function shouldIncludeProp(
-	propKey: string,
-	state: PropBuilderState,
-	isPartialReload: boolean,
-	partialDataSet: Set<string>,
-	partialExceptSet: Set<string>,
-	exceptOncePropsSet: Set<string>,
-): boolean {
+function shouldResolveProp(params: {
+	propKey: string;
+	propMetadata: PropBuilderState;
+	isPartialReload: boolean;
+	partialProps: Set<string>;
+	partialExceptProps: Set<string>;
+	exceptOnceProps: Set<string>;
+}): boolean {
+	const {
+		propKey,
+		propMetadata: state,
+		isPartialReload,
+		partialProps: partialDataSet,
+		partialExceptProps: partialExceptSet,
+		exceptOnceProps: exceptOncePropsSet,
+	} = params;
 	const isDeferred = state.type === "deferred";
 	const isOnce = state.type === "once" || state.once !== undefined;
 	const isOptional = state.isOptional === true;
 	const isAlways = state.isAlways === true;
 
-	// "always" props are always included
 	if (isAlways) {
 		return true;
 	}
@@ -398,12 +355,10 @@ function shouldIncludeProp(
 		partialDataSet.size > 0 && partialDataSet.has(propKey);
 	const isExplicitlyExcluded = partialExceptSet.has(propKey);
 
-	// "errors" and "flash" props are always included
 	if (propKey === "errors" || propKey === "flash") {
 		return true;
 	}
 
-	// For partial reloads
 	if (isPartialReload) {
 		if (partialExceptSet.size > 0 && isExplicitlyExcluded) {
 			return false;
@@ -413,7 +368,6 @@ function shouldIncludeProp(
 			return isExplicitlyRequested;
 		}
 
-		// No specific filters - include all non-optional, non-deferred props
 		if (isDeferred) {
 			return false;
 		}
@@ -421,19 +375,14 @@ function shouldIncludeProp(
 		return !isOptional;
 	}
 
-	// For standard (non-partial) visits
-
-	// Deferred props: don't resolve on initial visit
 	if (isDeferred) {
 		return false;
 	}
 
-	// Optional props: never included on standard visits
 	if (isOptional) {
 		return false;
 	}
 
-	// Once props: skip if client already has them
 	if (isOnce && exceptOncePropsSet.has(propKey)) {
 		return false;
 	}
@@ -443,8 +392,9 @@ function shouldIncludeProp(
 
 /**
  * Shapes errors based on the errorBag header.
- * - No bag specified: flatten default errors to props.errors
- * - Bag specified: return errors nested under bag key
+ * - No bag specified: return all known bags.
+ * - Bag specified and missing: return empty errors.
+ * - Bag specified and present: keep all bags so existing form errors persist.
  */
 function shapeErrors(
 	allErrors: Record<string, Record<string, string>>,
@@ -456,30 +406,39 @@ function shapeErrors(
 
 	if (errorBag) {
 		const bagErrors = allErrors[errorBag];
-		if (bagErrors) {
-			return { [errorBag]: bagErrors };
-		}
-		return {};
+		return bagErrors ? allErrors : {};
 	}
 
 	return allErrors;
 }
 
-function collectBuilderMetadata(
-	key: string,
-	meta: PropBuilderState,
-	urlParams: URLSearchParams,
-	hasMore: Record<string, boolean> | undefined,
-	collections: {
-		deferredProps: Record<string, string[]>;
-		mergeProps: string[];
-		prependProps: string[];
-		deepMergeProps: string[];
-		matchPropsOn: string[];
-		scrollProps: Record<string, InertiaPageScrollProps>;
-		onceProps: Record<string, InertiaPageOnceProps>;
-	},
-): void {
+type PageMetadata = Required<
+	Pick<
+		InertiaPage,
+		| "deferredProps"
+		| "mergeProps"
+		| "prependProps"
+		| "deepMergeProps"
+		| "matchPropsOn"
+		| "scrollProps"
+		| "onceProps"
+	>
+>;
+
+function parsePropIntoPageMetadata(params: {
+	propKey: string;
+	propMetadata: PropBuilderState;
+	urlParams: URLSearchParams;
+	paginatedPropsWithNextPage: Record<string, boolean> | undefined;
+	pageMetadata: PageMetadata;
+}): void {
+	const {
+		propKey: key,
+		propMetadata: meta,
+		urlParams,
+		paginatedPropsWithNextPage: hasMore,
+		pageMetadata: metadata,
+	} = params;
 	const {
 		deferredProps,
 		mergeProps,
@@ -488,7 +447,7 @@ function collectBuilderMetadata(
 		matchPropsOn,
 		scrollProps,
 		onceProps,
-	} = collections;
+	} = metadata;
 	const shouldTrackOnce =
 		meta.type === "once" ||
 		meta.isDeferredOnce === true ||
