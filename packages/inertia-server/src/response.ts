@@ -4,7 +4,7 @@
  * Handles building HTML and JSON responses for Inertia requests.
  */
 
-import type { InertiaPage, InertiaRequestOptions } from "./types";
+import type { InertiaPage } from "./types";
 
 // =============================================================================
 // Response Headers
@@ -24,10 +24,7 @@ export const RESPONSE_HEADER_VARY = "Vary";
  * @param page - The page object to send
  * @returns Response with JSON body and Inertia headers
  */
-export function createJsonResponse(
-	page: InertiaPage,
-	_requestOptions?: InertiaRequestOptions,
-): Response {
+export function createJsonResponse(page: InertiaPage): Response {
 	return new Response(JSON.stringify(page), {
 		status: 200,
 		headers: {
@@ -152,11 +149,4 @@ export function checkVersionMatch(
  */
 export function createDataPageAttribute(page: InertiaPage): string {
 	return JSON.stringify(page);
-}
-
-/**
- * Encodes the page object for the data-page attribute with HTML entity escaping.
- */
-export function encodePageForAttribute(page: InertiaPage): string {
-	return JSON.stringify(page).replace(/'/g, "&#039;").replace(/"/g, "&quot;");
 }

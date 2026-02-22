@@ -28,15 +28,8 @@ import {
 	type SharedPageProps,
 } from "./types";
 
-// =============================================================================
-// Re-exports
-// =============================================================================
-
-// Builders
 export { deepMergedProp, isBuilder, mergedProp, prop } from "./builders";
-// Headers
 export { parseInertiaHeaders } from "./headers";
-// Response utilities
 export {
 	checkVersionMatch,
 	createDataPageAttribute,
@@ -47,7 +40,7 @@ export {
 	createVersionConflictResponse,
 	getRedirectStatus,
 } from "./response";
-// Types
+
 export type {
 	AnyBuilder,
 	CreateHelperFn,
@@ -171,6 +164,10 @@ export function createInertia(config: CreateInertiaConfig) {
 
 		let encryptHistory = config.encryptHistory ?? false;
 		let clearHistory = false;
+		const getFlashData = (): Record<string, unknown> =>
+			Object.keys(stagedErrors).length > 0
+				? { ...currentFlash, _inertia_errors: stagedErrors }
+				: currentFlash;
 
 		const inertia: InertiaHelper = {
 			async render(context) {
@@ -200,7 +197,7 @@ export function createInertia(config: CreateInertiaConfig) {
 				}
 
 				if (requestOptions.isInertia) {
-					return createJsonResponse(pageWithUrl, requestOptions);
+					return createJsonResponse(pageWithUrl);
 				}
 
 				const html = await config.render(pageWithUrl);
@@ -211,23 +208,13 @@ export function createInertia(config: CreateInertiaConfig) {
 				const method = request.method;
 				const finalStatus = status ?? getRedirectStatus(method);
 
-				const flashData =
-					Object.keys(stagedErrors).length > 0
-						? { ...currentFlash, _inertia_errors: stagedErrors }
-						: currentFlash;
-
-				flash?.set(flashData);
+				flash?.set(getFlashData());
 
 				return createRedirectResponse(url, finalStatus);
 			},
 
 			location(url) {
-				const flashData =
-					Object.keys(stagedErrors).length > 0
-						? { ...currentFlash, _inertia_errors: stagedErrors }
-						: currentFlash;
-
-				flash?.set(flashData);
+				flash?.set(getFlashData());
 
 				return createExternalRedirectResponse(url);
 			},
@@ -280,8 +267,8 @@ export function createInertia(config: CreateInertiaConfig) {
  * Resolves a page resolution context into a fully resolved InertiaPage.
  * This is where request-driven prop filtering happens.
  */
-async function resolvePageProps(
-	context: InertiaPageContext,
+async function resolvePageProps<S extends PagePropsSchema>(
+	context: InertiaPageContext<S>,
 	requestOptions: InertiaRequestOptions,
 	flash: Record<string, unknown>,
 	stagedErrors: Record<string, Record<string, string>>,
@@ -307,10 +294,10 @@ async function resolvePageProps(
 	const exceptOncePropsSet = new Set(requestOptions.exceptOnceProps);
 
 	const urlParams = new URLSearchParams(new URL(requestUrl).search);
-
-	const hasMore = (values as Record<string, unknown>).$hasMore as
-		| Record<string, boolean>
-		| undefined;
+	const hasMore =
+		"$hasMore" in values
+			? (values.$hasMore as Record<string, boolean>)
+			: undefined;
 
 	for (const [propKey, builder] of Object.entries(schema)) {
 		const state = builder[BUILDER_STATE];
@@ -502,6 +489,10 @@ function collectBuilderMetadata(
 		scrollProps,
 		onceProps,
 	} = collections;
+	const shouldTrackOnce =
+		meta.type === "once" ||
+		meta.isDeferredOnce === true ||
+		meta.once !== undefined;
 
 	if (meta.type === "deferred" || meta.deferredGroup) {
 		const group = meta.deferredGroup || "default";
@@ -509,16 +500,9 @@ function collectBuilderMetadata(
 			deferredProps[group] = [];
 		}
 		deferredProps[group].push(key);
-
-		if (meta.isDeferredOnce || meta.once) {
-			onceProps[key] = {
-				prop: key,
-				expiresAt: meta.once?.expiresAt ?? null,
-			};
-		}
 	}
 
-	if (meta.type === "once" || meta.once) {
+	if (shouldTrackOnce) {
 		onceProps[key] = {
 			prop: key,
 			expiresAt: meta.once?.expiresAt ?? null,
@@ -537,15 +521,13 @@ function collectBuilderMetadata(
 		}
 
 		if (meta.scrollOptions) {
-			const pageName = meta.scrollOptions.pageName;
-			const currentPage = parseInt(urlParams.get(pageName) ?? "1", 10);
-			const propHasMore = hasMore?.[key] ?? false;
-			scrollProps[key] = {
-				pageName,
-				previousPage: currentPage > 1 ? currentPage - 1 : null,
-				nextPage: propHasMore ? currentPage + 1 : null,
-				currentPage,
-			};
+			addScrollMetadata(
+				key,
+				meta.scrollOptions.pageName,
+				urlParams,
+				hasMore,
+				scrollProps,
+			);
 		}
 	}
 
@@ -557,15 +539,30 @@ function collectBuilderMetadata(
 		}
 
 		if (meta.scrollOptions) {
-			const pageName = meta.scrollOptions.pageName;
-			const currentPage = parseInt(urlParams.get(pageName) ?? "1", 10);
-			const propHasMore = hasMore?.[key] ?? false;
-			scrollProps[key] = {
-				pageName,
-				previousPage: currentPage > 1 ? currentPage - 1 : null,
-				nextPage: propHasMore ? currentPage + 1 : null,
-				currentPage,
-			};
+			addScrollMetadata(
+				key,
+				meta.scrollOptions.pageName,
+				urlParams,
+				hasMore,
+				scrollProps,
+			);
 		}
 	}
+}
+
+function addScrollMetadata(
+	key: string,
+	pageName: string,
+	urlParams: URLSearchParams,
+	hasMore: Record<string, boolean> | undefined,
+	scrollProps: Record<string, InertiaPageScrollProps>,
+): void {
+	const currentPage = parseInt(urlParams.get(pageName) ?? "1", 10);
+	const propHasMore = hasMore?.[key] ?? false;
+	scrollProps[key] = {
+		pageName,
+		previousPage: currentPage > 1 ? currentPage - 1 : null,
+		nextPage: propHasMore ? currentPage + 1 : null,
+		currentPage,
+	};
 }
