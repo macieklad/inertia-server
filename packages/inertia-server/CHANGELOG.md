@@ -1,5 +1,11 @@
 # inertia-server
 
+## 0.1.1
+
+### Patch Changes
+
+- [`aea9b62`](https://github.com/macieklad/inertia-server/commit/aea9b62cefb5582663255d53a2f8d9c52c8e7d39) Thanks [@macieklad](https://github.com/macieklad)! - Fix prepack script
+
 ## 0.1.0
 
 ### Minor Changes
