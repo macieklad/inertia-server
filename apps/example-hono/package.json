@@ -1,0 +1,41 @@
+{
+	"name": "example-hono",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "concurrently -n vite,server -c blue,green \"bun dev:client\" \"bun dev:server\"",
+		"dev:server": "bun run --watch src/server.ts",
+		"dev:client": "vite --port 5174 --strictPort",
+		"build": "vite build",
+		"start": "NODE_ENV=production bun run src/server.ts",
+		"test:e2e": "playwright test",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@inertiajs/core": "^2.3.8",
+		"@inertiajs/react": "^2.0.0",
+		"@radix-ui/react-label": "^2.1.8",
+		"@radix-ui/react-slot": "^1.2.4",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
+		"hono": "^4.10.4",
+		"inertia-server": "workspace:*",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0",
+		"tailwind-merge": "^3.4.0"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.49.0",
+		"@tailwindcss/vite": "^4.1.18",
+		"@types/bun": "latest",
+		"@types/react": "^19.0.0",
+		"@types/react-dom": "^19.0.0",
+		"@vitejs/plugin-react": "^5.1.2",
+		"concurrently": "^9.1.2",
+		"tailwindcss": "^4.1.18",
+		"typescript": "^5.9.3",
+		"vite": "^7.3.1",
+		"vite-tsconfig-paths": "^5.1.4"
+	}
+}

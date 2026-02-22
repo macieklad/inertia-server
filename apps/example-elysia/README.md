@@ -11,6 +11,8 @@ Demonstrates all inertia-server features:
 - Partial reloads
 - Server-side rendering
 
+Used as testing ground for the `inertia-server` package.
+
 ## Run
 
 ```bash
