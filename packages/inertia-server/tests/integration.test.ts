@@ -2,7 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { treaty } from "@elysiajs/eden";
 import { Elysia } from "elysia";
 import { elysiaAdapter } from "../src/elysia";
-import { createInertia, mergedProp, prop } from "../src/index";
+import {
+	createInertia,
+	deferred,
+	merged,
+	mergedProp,
+	prop,
+} from "../src/index";
 import { inertia } from "../src/testing";
 import type { FlashAdapter, InertiaPage } from "../src/types";
 
@@ -128,6 +134,68 @@ const pages = {
 		component: "Test",
 		props: { title: prop<string>(), comments: prop<string[]>().deferred() },
 	}),
+	nestedPlain: definePage<{
+		title: string;
+		user: {
+			name: string;
+			details: {
+				email: string;
+				team: string;
+			};
+		};
+		settings: {
+			theme: string;
+			locale: string;
+		};
+	}>({
+		component: "Nested/Plain",
+	}),
+	nestedProfile: definePage<{
+		title: string;
+		profile: {
+			name: string;
+			heavy: {
+				chart: string[];
+				summary: string;
+			};
+		};
+	}>({
+		component: "Nested/Profile",
+		modifiers: {
+			profile: {
+				heavy: deferred(),
+			},
+		},
+	}),
+	nestedSidebar: definePage<{
+		title: string;
+		sidebar: {
+			stats: {
+				unread: number;
+			};
+			notes: string[];
+		};
+	}>({
+		component: "Nested/Sidebar",
+		modifiers: {
+			sidebar: deferred(),
+		},
+	}),
+	nestedFeed: definePage<{
+		title: string;
+		feed: {
+			data: { id: number; label: string }[];
+		};
+	}>({
+		component: "Nested/Feed",
+		modifiers: {
+			feed: {
+				data: merged<{ id: number; label: string }[]>({
+					matchOn: "id",
+				}).scroll(),
+			},
+		},
+	}),
 };
 
 const app = new Elysia()
@@ -214,6 +282,23 @@ const app = new Elysia()
 			}),
 		),
 	)
+	.get("/nested/feed", ({ inertia, query }) => {
+		const page = parseInt((query.page as string) ?? "1", 10);
+		const hasMore = page < 2;
+
+		return inertia.render(
+			pages.nestedFeed({
+				title: "Nested Feed",
+				feed: {
+					data: [
+						{ id: page * 10 + 1, label: `Item ${page * 10 + 1}` },
+						{ id: page * 10 + 2, label: `Item ${page * 10 + 2}` },
+					],
+				},
+				$hasMore: { "feed.data": hasMore },
+			}),
+		);
+	})
 	.get("/scroll-posts", ({ inertia, query }) => {
 		const page = parseInt((query.page as string) ?? "1", 10);
 		const hasMore = page < 3;
@@ -494,6 +579,259 @@ describe("Partial reloads", () => {
 			.has("users", ["Alice", "Bob"])
 			.has("companies", ["Acme", "Corp"])
 			.assert();
+	});
+});
+
+describe("Nested modifiers and partial reloads", () => {
+	test("nested partial reload resolves only the requested child path", async () => {
+		let emailResolved = false;
+		let teamResolved = false;
+
+		const testApp = new Elysia()
+			.use(defaultPlugin)
+			.get("/nested/plain", ({ inertia }) =>
+				inertia.render(
+					pages.nestedPlain({
+						title: "Nested Plain",
+						user: {
+							name: "Alice",
+							details: {
+								email: () => {
+									emailResolved = true;
+									return "alice@example.com";
+								},
+								team: () => {
+									teamResolved = true;
+									return "Platform";
+								},
+							},
+						},
+						settings: {
+							theme: "light",
+							locale: "en",
+						},
+					}),
+				),
+			);
+
+		const response = await testApp.handle(
+			new Request("http://localhost/nested/plain", {
+				headers: {
+					"X-Inertia": "true",
+					"X-Inertia-Version": "1.0.0",
+					"X-Inertia-Partial-Component": "Nested/Plain",
+					"X-Inertia-Partial-Data": "user.details.email",
+				},
+			}),
+		);
+
+		await inertia(response)
+			.has("user.details.email", "alice@example.com")
+			.missing("user.name")
+			.missing("user.details.team")
+			.missing("settings")
+			.missing("title")
+			.assert();
+
+		expect(emailResolved).toBe(true);
+		expect(teamResolved).toBe(false);
+	});
+
+	test("nested partial except excludes only the targeted child path", async () => {
+		let emailResolved = false;
+		let teamResolved = false;
+
+		const testApp = new Elysia()
+			.use(defaultPlugin)
+			.get("/nested/plain", ({ inertia }) =>
+				inertia.render(
+					pages.nestedPlain({
+						title: "Nested Plain",
+						user: {
+							name: "Alice",
+							details: {
+								email: () => {
+									emailResolved = true;
+									return "alice@example.com";
+								},
+								team: () => {
+									teamResolved = true;
+									return "Platform";
+								},
+							},
+						},
+						settings: {
+							theme: "light",
+							locale: "en",
+						},
+					}),
+				),
+			);
+
+		const response = await testApp.handle(
+			new Request("http://localhost/nested/plain", {
+				headers: {
+					"X-Inertia": "true",
+					"X-Inertia-Version": "1.0.0",
+					"X-Inertia-Partial-Component": "Nested/Plain",
+					"X-Inertia-Partial-Except": "user.details.team",
+				},
+			}),
+		);
+
+		await inertia(response)
+			.has("title", "Nested Plain")
+			.has("user.name", "Alice")
+			.has("user.details.email", "alice@example.com")
+			.missing("user.details.team")
+			.has("settings.theme", "light")
+			.assert();
+
+		expect(emailResolved).toBe(true);
+		expect(teamResolved).toBe(false);
+	});
+
+	test("nested deferred child modifiers are tracked and resolved by dot path", async () => {
+		let heavyResolved = false;
+
+		const testApp = new Elysia()
+			.use(defaultPlugin)
+			.get("/nested/profile", ({ inertia }) =>
+				inertia.render(
+					pages.nestedProfile({
+						title: "Nested Profile",
+						profile: {
+							name: "Alice",
+							heavy: () => {
+								heavyResolved = true;
+								return {
+									chart: ["Jan", "Feb"],
+									summary: "Loaded on demand",
+								};
+							},
+						},
+					}),
+				),
+			);
+
+		const initialResponse = await testApp.handle(
+			new Request("http://localhost/nested/profile", {
+				headers: { "X-Inertia": "true", "X-Inertia-Version": "1.0.0" },
+			}),
+		);
+
+		await inertia(initialResponse)
+			.has("profile.name", "Alice")
+			.missing("profile.heavy")
+			.tap((page) => {
+				expect(page.deferredProps).toEqual({ default: ["profile.heavy"] });
+			})
+			.assert();
+		expect(heavyResolved).toBe(false);
+
+		const partialResponse = await testApp.handle(
+			new Request("http://localhost/nested/profile", {
+				headers: {
+					"X-Inertia": "true",
+					"X-Inertia-Version": "1.0.0",
+					"X-Inertia-Partial-Component": "Nested/Profile",
+					"X-Inertia-Partial-Data": "profile.heavy",
+				},
+			}),
+		);
+
+		await inertia(partialResponse)
+			.has("profile.heavy.chart", ["Jan", "Feb"])
+			.has("profile.heavy.summary", "Loaded on demand")
+			.missing("profile.name")
+			.missing("title")
+			.assert();
+		expect(heavyResolved).toBe(true);
+	});
+
+	test("parent modifiers can still satisfy nested partial requests", async () => {
+		let statsResolved = false;
+		let notesResolved = false;
+
+		const testApp = new Elysia()
+			.use(defaultPlugin)
+			.get("/nested/sidebar", ({ inertia }) =>
+				inertia.render(
+					pages.nestedSidebar({
+						title: "Nested Sidebar",
+						sidebar: {
+							stats: () => {
+								statsResolved = true;
+								return { unread: 3 };
+							},
+							notes: () => {
+								notesResolved = true;
+								return ["one", "two"];
+							},
+						},
+					}),
+				),
+			);
+
+		const initialResponse = await testApp.handle(
+			new Request("http://localhost/nested/sidebar", {
+				headers: { "X-Inertia": "true", "X-Inertia-Version": "1.0.0" },
+			}),
+		);
+
+		await inertia(initialResponse)
+			.has("title", "Nested Sidebar")
+			.missing("sidebar")
+			.tap((page) => {
+				expect(page.deferredProps).toEqual({ default: ["sidebar"] });
+			})
+			.assert();
+		expect(statsResolved).toBe(false);
+		expect(notesResolved).toBe(false);
+
+		const partialResponse = await testApp.handle(
+			new Request("http://localhost/nested/sidebar", {
+				headers: {
+					"X-Inertia": "true",
+					"X-Inertia-Version": "1.0.0",
+					"X-Inertia-Partial-Component": "Nested/Sidebar",
+					"X-Inertia-Partial-Data": "sidebar.stats",
+				},
+			}),
+		);
+
+		await inertia(partialResponse)
+			.has("sidebar.stats.unread", 3)
+			.missing("sidebar.notes")
+			.missing("title")
+			.assert();
+		expect(statsResolved).toBe(true);
+		expect(notesResolved).toBe(false);
+	});
+
+	test("nested merge metadata uses dot paths and nested scroll keys", async () => {
+		const { data } = await api.nested.feed.get(inertiaHeaders());
+
+		await inertia(data)
+			.has("feed.data", [
+				{ id: 11, label: "Item 11" },
+				{ id: 12, label: "Item 12" },
+			])
+			.tap((page) => {
+				expect(page.mergeProps).toContain("feed.data");
+				expect(page.matchPropsOn).toContain("feed.data.id");
+				expect(page.scrollProps?.["feed.data"]).toEqual({
+					pageName: "page",
+					previousPage: null,
+					nextPage: 2,
+					currentPage: 1,
+				});
+			})
+			.assert();
+
+		expect(pages.nestedFeed.scrollOptions).toEqual({
+			"feed.data": { pageName: "page" },
+		});
 	});
 });
 

@@ -20,7 +20,13 @@ It allows you to build modern single-page React, Vue, and Svelte applications us
 ## Example
 
 ```typescript
-import { createInertia, prop } from 'inertia-server';
+import {
+  createInertia,
+  deferred,
+  once,
+  type ModifierTree,
+  type PageProps,
+} from 'inertia-server';
 
 // Create Inertia instance
 const { definePage, createHelper } = createInertia({
@@ -28,15 +34,24 @@ const { definePage, createHelper } = createInertia({
   render: (page) => renderToString(<Root page={page} />),
 });
 
+type HomePageData = {
+  title: string;
+  user: User;
+  stats: Stats;
+};
+
+const homePageModifiers = {
+  user: once(),
+  stats: deferred(),
+} satisfies ModifierTree<HomePageData>;
+
 // Define your page - pages/home.ts 
-const homePage = definePage({
+const homePage = definePage<HomePageData, typeof homePageModifiers>({
   component: 'Home',
-  props: {
-    title: prop<string>(),
-    user: prop<User>().once(),
-    stats: prop<Stats>().deferred(),
-  },
+  modifiers: homePageModifiers,
 });
+
+export type HomePageProps = PageProps<typeof homePage>;
 
 // Your server.ts
 import { homePage } from './pages/home';
@@ -56,10 +71,9 @@ app.get('/', ({ request }) => {
 });
 
 // Your react page
-import { PageProps } from 'inertia-server';
-import type { homePage } from './pages/home';
+import type { HomePageProps } from './pages/home';
 
-export function Page({ title, user, stats }: PageProps<typeof homePage>) {
+export function Page({ title, user, stats }: HomePageProps) {
   return (
     <div>
       <h1>{title}</h1>

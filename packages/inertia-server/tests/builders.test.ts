@@ -1,6 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { deepMergedProp, isBuilder, mergedProp, prop } from "../src/builders";
-import { BUILDER_STATE } from "../src/types";
+import {
+	always,
+	deepMerged,
+	deepMergedProp,
+	deferred,
+	isBuilder,
+	merged,
+	mergedProp,
+	once,
+	optional,
+	prop,
+} from "../src/builders";
+import { BUILDER_SCROLL, BUILDER_STATE } from "../src/types";
 
 describe("prop()", () => {
 	test("returns a PropBuilder", () => {
@@ -92,6 +103,7 @@ describe("mergedProp()", () => {
 	test("mergedProp().scroll() adds scroll config", () => {
 		const builder = mergedProp<string[]>().scroll({ pageName: "page" });
 		expect(builder[BUILDER_STATE].scrollOptions?.pageName).toBe("page");
+		expect(builder[BUILDER_SCROLL]).toBe(true);
 	});
 
 	test("mergedProp() chains multiple modifiers", () => {
@@ -150,6 +162,55 @@ describe("deepMergedProp()", () => {
 		expect(meta.mergeDirection).toBe("prepend");
 		expect(meta.mergeOptions?.matchOn).toBe("data.id");
 		expect(meta.scrollOptions?.pageName).toBe("p");
+	});
+});
+
+describe("standalone modifier helpers", () => {
+	test("deferred(), optional(), always(), and once() proxy prop behavior", () => {
+		expect(deferred()[BUILDER_STATE]).toMatchObject({
+			type: "deferred",
+			deferredGroup: "default",
+		});
+		expect(optional()[BUILDER_STATE]).toMatchObject({
+			type: "prop",
+			isOptional: true,
+		});
+		expect(always()[BUILDER_STATE]).toMatchObject({
+			type: "prop",
+			isAlways: true,
+		});
+		expect(once({ expiresAt: 42 })[BUILDER_STATE]).toMatchObject({
+			type: "once",
+			once: { expiresAt: 42 },
+		});
+	});
+
+	test("merged() supports deferred and once chaining", () => {
+		const builder = merged<{ id: number }[]>({ matchOn: "id" })
+			.deferred("sidebar")
+			.once({ expiresAt: 123 });
+
+		expect(builder[BUILDER_STATE]).toMatchObject({
+			type: "merge",
+			deferredGroup: "sidebar",
+			once: { expiresAt: 123 },
+			mergeOptions: { matchOn: "id" },
+		});
+	});
+
+	test("deepMerged() preserves scroll config while adding lazy behavior", () => {
+		const builder = deepMerged<{ data: { id: number }[] }>({
+			matchOn: "data.id",
+		})
+			.scroll({ pageName: "cursor" })
+			.deferred("feed");
+
+		expect(builder[BUILDER_STATE]).toMatchObject({
+			type: "deepMerge",
+			deferredGroup: "feed",
+			mergeOptions: { matchOn: "data.id" },
+			scrollOptions: { pageName: "cursor" },
+		});
 	});
 });
 

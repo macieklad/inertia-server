@@ -1,4 +1,5 @@
 import { parseInertiaHeaders } from "./headers";
+import { buildRuntimeDefinition, resolvePageProps } from "./page-runtime";
 import {
 	checkVersionMatch,
 	createExternalRedirectResponse,
@@ -9,25 +10,31 @@ import {
 	getRedirectStatus,
 } from "./response";
 import {
-	BUILDER_STATE,
 	type CreateHelperFn,
 	type CreateInertiaConfig,
 	type DefinePageFn,
-	type DefinePageFnOptions,
 	type InertiaHelper,
 	type InertiaPage,
 	type InertiaPageContext,
 	type InertiaPageDefinition,
-	type InertiaPageScrollProps,
-	type InertiaRequestOptions,
+	PAGE_PROPS,
+	PAGE_VALUES,
 	type PageDefinitionFnOptions,
-	type PagePropsSchema,
-	type PagePropsValues,
-	type PropBuilderState,
-	type SharedPageProps,
+	REQUIRED_SHARED,
 } from "./types";
 
-export { deepMergedProp, isBuilder, mergedProp, prop } from "./builders";
+export {
+	always,
+	deepMerged,
+	deepMergedProp,
+	deferred,
+	isBuilder,
+	merged,
+	mergedProp,
+	once,
+	optional,
+	prop,
+} from "./builders";
 export { parseInertiaHeaders } from "./headers";
 export {
 	checkVersionMatch,
@@ -51,6 +58,9 @@ export type {
 	DeferredOnceBuilder,
 	DefinePageFn as DefinePage,
 	DefinePageFnOptions as DefinePageOptions,
+	DefinePageModifierOptions,
+	DefinePageSchemaOptions,
+	ErrorBags,
 	InertiaHelper,
 	InertiaPage,
 	InertiaPageContext,
@@ -58,6 +68,7 @@ export type {
 	InertiaRequestOptions,
 	InertiaRequestOptions as InertiaRequestHeaders,
 	MergeBuilder,
+	ModifierTree,
 	OnceBuilder,
 	PageDefinitionFnOptions as PageRenderOptions,
 	PageProps,
@@ -68,22 +79,31 @@ export type {
 	ScrollMergeBuilder,
 } from "./types";
 
-export function createInertia(config: CreateInertiaConfig) {
-	const definePage: DefinePageFn = <
-		S extends PagePropsSchema,
-		RS extends keyof SharedPageProps = never,
-	>(
-		options: DefinePageFnOptions<S, RS>,
-	): InertiaPageDefinition<S, RS> => {
-		const { component, props: schema } = options;
+export function createInertia(config: CreateInertiaConfig): {
+	definePage: DefinePageFn;
+	createHelper: CreateHelperFn;
+} {
+	const definePage = (options: {
+		component: string;
+		props?: unknown;
+		modifiers?: unknown;
+		requireShared?: readonly string[];
+	}): InertiaPageDefinition<
+		Record<string, unknown>,
+		Record<string, unknown>
+	> => {
+		const { component } = options;
+		const definition = buildRuntimeDefinition(
+			options as Parameters<typeof buildRuntimeDefinition>[0],
+		);
 
-		const definition = ((
-			values: PagePropsValues<S>,
+		const pageDefinition = ((
+			values: Record<string, unknown>,
 			renderOptions?: PageDefinitionFnOptions,
-		): InertiaPageContext<S> => {
+		): InertiaPageContext => {
 			return {
 				component,
-				schema,
+				definition,
 				values,
 				options: renderOptions,
 				version:
@@ -91,35 +111,42 @@ export function createInertia(config: CreateInertiaConfig) {
 						? config.version()
 						: config.version,
 			};
-		}) as InertiaPageDefinition<S, RS>;
+		}) as InertiaPageDefinition<
+			Record<string, unknown>,
+			Record<string, unknown>
+		>;
 
-		Object.defineProperty(definition, "component", {
+		Object.defineProperty(pageDefinition, "component", {
 			value: component,
 			writable: false,
 			enumerable: false,
 		});
 
-		Object.defineProperty(definition, "schema", {
-			value: schema,
+		Object.defineProperty(pageDefinition, "scrollOptions", {
+			value: definition.scrollOptions,
 			writable: false,
 			enumerable: false,
 		});
 
-		const scrollOptions: Record<string, { pageName: string }> = {};
-		for (const [key, builder] of Object.entries(schema)) {
-			const state = builder[BUILDER_STATE];
-			if (state.scrollOptions) {
-				scrollOptions[key] = state.scrollOptions;
-			}
-		}
-
-		Object.defineProperty(definition, "scrollOptions", {
-			value: scrollOptions,
+		Object.defineProperty(pageDefinition, REQUIRED_SHARED, {
+			value: undefined,
 			writable: false,
 			enumerable: false,
 		});
 
-		return definition;
+		Object.defineProperty(pageDefinition, PAGE_PROPS, {
+			value: undefined,
+			writable: false,
+			enumerable: false,
+		});
+
+		Object.defineProperty(pageDefinition, PAGE_VALUES, {
+			value: undefined,
+			writable: false,
+			enumerable: false,
+		});
+
+		return pageDefinition;
 	};
 
 	const createHelper: CreateHelperFn = async ({ request, flash }) => {
@@ -145,7 +172,6 @@ export function createInertia(config: CreateInertiaConfig) {
 				);
 
 				const url = page.url || new URL(request.url).pathname;
-
 				const pageWithUrl: InertiaPage = {
 					...page,
 					url,
@@ -170,17 +196,13 @@ export function createInertia(config: CreateInertiaConfig) {
 			},
 
 			redirect(url, status) {
-				const method = request.method;
-				const finalStatus = status ?? getRedirectStatus(method);
-
+				const finalStatus = status ?? getRedirectStatus(request.method);
 				flash?.set(getFlashData());
-
 				return createRedirectResponse(url, finalStatus);
 			},
 
 			location(url) {
 				flash?.set(getFlashData());
-
 				return createExternalRedirectResponse(url);
 			},
 
@@ -188,12 +210,13 @@ export function createInertia(config: CreateInertiaConfig) {
 				currentFlash[key as string] = value;
 			},
 
-			errors(errs, bag): void {
+			errors(errors, bag): void {
 				if (bag) {
-					stagedErrors[bag] = errs;
-				} else {
-					stagedErrors.default = errs;
+					stagedErrors[bag] = errors;
+					return;
 				}
+
+				stagedErrors.default = errors;
 			},
 
 			encryptHistory(): void {
@@ -208,325 +231,5 @@ export function createInertia(config: CreateInertiaConfig) {
 		return inertia;
 	};
 
-	return { definePage, createHelper };
-}
-
-/**
- * Resolves a page resolution context into a fully resolved InertiaPage.
- * This is where request-driven prop filtering happens.
- */
-async function resolvePageProps<S extends PagePropsSchema>(
-	context: InertiaPageContext<S>,
-	requestOptions: InertiaRequestOptions,
-	flash: Record<string, unknown>,
-	stagedErrors: Record<string, Record<string, string>>,
-	requestUrl: string,
-): Promise<InertiaPage> {
-	const { component, schema, values, options, version } = context;
-
-	const resolvedProps: Record<string, unknown> = {};
-	const pageMetadata: PageMetadata = {
-		deferredProps: {},
-		mergeProps: [],
-		prependProps: [],
-		deepMergeProps: [],
-		matchPropsOn: [],
-		scrollProps: {},
-		onceProps: {},
-	};
-
-	const isPartialReload =
-		requestOptions.partialComponent !== null &&
-		requestOptions.partialComponent === component;
-
-	const partialProps = new Set(requestOptions.partialData);
-	const partialExceptProps = new Set(requestOptions.partialExcept);
-	const exceptOnceProps = new Set(requestOptions.exceptOnceProps);
-
-	const urlParams = new URLSearchParams(new URL(requestUrl).search);
-	const paginatedPropsWithNextPage = hasMoreMarker(values)
-		? values.$hasMore
-		: undefined;
-
-	for (const [propKey, builder] of Object.entries(schema)) {
-		const propMetadata = builder[BUILDER_STATE];
-		const value = values[propKey as keyof typeof values];
-
-		parsePropIntoPageMetadata({
-			propKey,
-			propMetadata,
-			urlParams,
-			paginatedPropsWithNextPage,
-			pageMetadata,
-		});
-
-		const shouldPropResolve = shouldResolveProp({
-			propKey,
-			propMetadata,
-			isPartialReload,
-			partialProps,
-			partialExceptProps,
-			exceptOnceProps,
-		});
-
-		if (shouldPropResolve) {
-			const resolvedValue =
-				typeof value === "function"
-					? await (value as () => unknown | Promise<unknown>)()
-					: value;
-			resolvedProps[propKey] = resolvedValue;
-		}
-	}
-
-	const flashedErrors = flash._inertia_errors as
-		| Record<string, Record<string, string>>
-		| undefined;
-	const allErrors = { ...flashedErrors, ...stagedErrors };
-	resolvedProps.errors = shapeErrors(allErrors, requestOptions.errorBag);
-
-	const { _inertia_errors, ...userFlash } = flash;
-	resolvedProps.flash = userFlash;
-
-	const page: InertiaPage = {
-		component,
-		props: resolvedProps,
-		url: options?.url ?? "",
-		version,
-	};
-
-	if (options?.encryptHistory !== undefined) {
-		page.encryptHistory = options.encryptHistory;
-	}
-	if (options?.clearHistory !== undefined) {
-		page.clearHistory = options.clearHistory;
-	}
-
-	if (!isPartialReload) {
-		if (Object.keys(pageMetadata.deferredProps).length > 0)
-			page.deferredProps = pageMetadata.deferredProps;
-		if (Object.keys(pageMetadata.onceProps).length > 0)
-			page.onceProps = pageMetadata.onceProps;
-	}
-
-	if (pageMetadata.mergeProps.length > 0)
-		page.mergeProps = pageMetadata.mergeProps;
-	if (pageMetadata.prependProps.length > 0)
-		page.prependProps = pageMetadata.prependProps;
-	if (pageMetadata.deepMergeProps.length > 0)
-		page.deepMergeProps = pageMetadata.deepMergeProps;
-	if (pageMetadata.matchPropsOn.length > 0)
-		page.matchPropsOn = pageMetadata.matchPropsOn;
-	if (Object.keys(pageMetadata.scrollProps).length > 0)
-		page.scrollProps = pageMetadata.scrollProps;
-
-	return page;
-}
-
-/**
- * Determines if a prop should be included in the response based on request options and builder state.
- */
-function shouldResolveProp(params: {
-	propKey: string;
-	propMetadata: PropBuilderState;
-	isPartialReload: boolean;
-	partialProps: Set<string>;
-	partialExceptProps: Set<string>;
-	exceptOnceProps: Set<string>;
-}): boolean {
-	const {
-		propKey,
-		propMetadata: state,
-		isPartialReload,
-		partialProps: partialDataSet,
-		partialExceptProps: partialExceptSet,
-		exceptOnceProps: exceptOncePropsSet,
-	} = params;
-	const isDeferred = state.type === "deferred";
-	const isOnce = state.type === "once" || state.once !== undefined;
-	const isOptional = state.isOptional === true;
-	const isAlways = state.isAlways === true;
-
-	if (isAlways) {
-		return true;
-	}
-
-	const isExplicitlyRequested =
-		partialDataSet.size > 0 && partialDataSet.has(propKey);
-	const isExplicitlyExcluded = partialExceptSet.has(propKey);
-
-	if (propKey === "errors" || propKey === "flash") {
-		return true;
-	}
-
-	if (isPartialReload) {
-		if (partialExceptSet.size > 0 && isExplicitlyExcluded) {
-			return false;
-		}
-
-		if (partialDataSet.size > 0) {
-			return isExplicitlyRequested;
-		}
-
-		if (isDeferred) {
-			return false;
-		}
-
-		return !isOptional;
-	}
-
-	if (isDeferred) {
-		return false;
-	}
-
-	if (isOptional) {
-		return false;
-	}
-
-	if (isOnce && exceptOncePropsSet.has(propKey)) {
-		return false;
-	}
-
-	return true;
-}
-
-/**
- * Shapes errors based on the errorBag header.
- * - No bag specified: return all known bags.
- * - Bag specified and missing: return empty errors.
- * - Bag specified and present: return only that bag.
- */
-function shapeErrors(
-	allErrors: Record<string, Record<string, string>>,
-	errorBag: string | null,
-): Record<string, unknown> {
-	if (Object.keys(allErrors).length === 0) {
-		return {};
-	}
-
-	if (errorBag) {
-		const bagErrors = allErrors[errorBag];
-		return bagErrors ? { [errorBag]: bagErrors } : {};
-	}
-
-	return allErrors;
-}
-
-function hasMoreMarker<S extends PagePropsSchema>(
-	values: PagePropsValues<S>,
-): values is PagePropsValues<S> & { $hasMore: Record<string, boolean> } {
-	return "$hasMore" in values;
-}
-
-type PageMetadata = Required<
-	Pick<
-		InertiaPage,
-		| "deferredProps"
-		| "mergeProps"
-		| "prependProps"
-		| "deepMergeProps"
-		| "matchPropsOn"
-		| "scrollProps"
-		| "onceProps"
-	>
->;
-
-function parsePropIntoPageMetadata(params: {
-	propKey: string;
-	propMetadata: PropBuilderState;
-	urlParams: URLSearchParams;
-	paginatedPropsWithNextPage: Record<string, boolean> | undefined;
-	pageMetadata: PageMetadata;
-}): void {
-	const {
-		propKey: key,
-		propMetadata: meta,
-		urlParams,
-		paginatedPropsWithNextPage: hasMore,
-		pageMetadata: metadata,
-	} = params;
-	const {
-		deferredProps,
-		mergeProps,
-		prependProps,
-		deepMergeProps,
-		matchPropsOn,
-		scrollProps,
-		onceProps,
-	} = metadata;
-	const shouldTrackOnce =
-		meta.type === "once" ||
-		meta.isDeferredOnce === true ||
-		meta.once !== undefined;
-
-	if (meta.type === "deferred" || meta.deferredGroup) {
-		const group = meta.deferredGroup || "default";
-		if (!deferredProps[group]) {
-			deferredProps[group] = [];
-		}
-		deferredProps[group].push(key);
-	}
-
-	if (shouldTrackOnce) {
-		onceProps[key] = {
-			prop: key,
-			expiresAt: meta.once?.expiresAt ?? null,
-		};
-	}
-
-	if (meta.type === "merge") {
-		if (meta.mergeDirection === "prepend") {
-			prependProps.push(key);
-		} else {
-			mergeProps.push(key);
-		}
-
-		if (meta.mergeOptions?.matchOn) {
-			matchPropsOn.push(`${key}.${meta.mergeOptions.matchOn}`);
-		}
-
-		if (meta.scrollOptions) {
-			addScrollMetadata(
-				key,
-				meta.scrollOptions.pageName,
-				urlParams,
-				hasMore,
-				scrollProps,
-			);
-		}
-	}
-
-	if (meta.type === "deepMerge") {
-		deepMergeProps.push(key);
-
-		if (meta.mergeOptions?.matchOn) {
-			matchPropsOn.push(`${key}.${meta.mergeOptions.matchOn}`);
-		}
-
-		if (meta.scrollOptions) {
-			addScrollMetadata(
-				key,
-				meta.scrollOptions.pageName,
-				urlParams,
-				hasMore,
-				scrollProps,
-			);
-		}
-	}
-}
-
-function addScrollMetadata(
-	key: string,
-	pageName: string,
-	urlParams: URLSearchParams,
-	hasMore: Record<string, boolean> | undefined,
-	scrollProps: Record<string, InertiaPageScrollProps>,
-): void {
-	const currentPage = parseInt(urlParams.get(pageName) ?? "1", 10);
-	const propHasMore = hasMore?.[key] ?? false;
-	scrollProps[key] = {
-		pageName,
-		previousPage: currentPage > 1 ? currentPage - 1 : null,
-		nextPage: propHasMore ? currentPage + 1 : null,
-		currentPage,
-	};
+	return { definePage: definePage as unknown as DefinePageFn, createHelper };
 }

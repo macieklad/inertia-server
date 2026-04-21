@@ -3,9 +3,8 @@ title: Pages
 description: 'Guide to your Inertia data model'
 ---
 
-When building applications using Inertia, each page in your application typically has its own controller / route and a corresponding JavaScript component. 
-This allows you to retrieve just the data necessary for that page - no API required. With `inertia-server`, working with pages is based on the concept
-of page definitions created by the `definePage` function. 
+When building applications using Inertia, each page in your application typically has its own controller / route and a corresponding JavaScript component.
+This allows you to retrieve just the data necessary for that page - no API required. With `inertia-server`, working with pages is based on page definitions created by `definePage`.
 
 ```ts
 const { definePage } = createInertia(...);
@@ -13,329 +12,323 @@ const { definePage } = createInertia(...);
 
 ## Creating page definitions
 
-Page definitions consist of the component name, and a set of props that will be passed to it.
+Page definitions are data-first. Start with the full data shape your page expects, then add modifiers only for props that need special Inertia behavior.
 
 ```ts ~/server/inertia.ts
-import { createInertia, prop, mergedProp, deepMergedProp, type PageProps } from 'inertia-server';
+import {
+  createInertia,
+  deferred,
+  deepMerged,
+  merged,
+  type ModifierTree,
+  type PageProps,
+} from 'inertia-server';
 
-const homePage = definePage({
+type HomePageData = {
+  title: string;
+  description: string;
+  posts: Posts[];
+  tasks: Tasks[];
+};
+
+const homePageModifiers = {
+  posts: merged<Posts[]>({ matchOn: 'id' }),
+  tasks: deepMerged<Tasks[]>().deferred('sidebar'),
+} satisfies ModifierTree<HomePageData>;
+
+const homePage = definePage<HomePageData, typeof homePageModifiers>({
   component: 'Home',
-  props: {
-    title: prop<string>(),
-    description: prop<string>(),
-    posts: mergedProp<Posts[]>(),
-    tasks: deepMergedProp<Tasks[]>().deferred(),
-  },
-  // Make sure that the 'user' shared key is available
-  // during render, otherwise it is optional
+  modifiers: homePageModifiers,
   requireShared: ['user'],
 });
 
 export type HomePageProps = PageProps<typeof homePage>;
 ```
 
-When handling inertia requests, you can render your page by passing a page context
-to the `render` function. It is created by invoking your page definition with the required props.
+When handling Inertia requests, render your page by invoking the page definition with the data you want to send.
 
-```typescript
-inertia.render(homePage({
-  title: 'Welcome',
-  description: 'Hello, World!',
-  posts: () => getPosts(req.params.page),
-  tasks: () => getTasks(),
-}));
+```ts
+inertia.render(
+  homePage({
+    title: 'Welcome',
+    description: 'Hello, World!',
+    posts: () => getPosts(req.params.page),
+    tasks: () => getTasks(),
+  })
+);
 ```
 
-On the client, you can use the created definitions to access your data with full type safety.
+On the client, use the generated page props type.
 
-<CodeGroup>
-  ```tsx react icon="react"
-  import type { HomePageProps } from '~/server/inertia';
+```tsx react icon="react"
+import type { HomePageProps } from '~/server/inertia';
 
-  function Home({ user, posts, tasks }: HomePageProps) {
-    /**
-     * interface Props {
-     *  title: string;
-     *  description: string;
-     *  posts: Posts[];
-     *  tasks?: Tasks[];
-     *  user: User
-     * }
-    */
-    const { title, description, posts, tasks } = props;
-    return (
-      <div>
-        <h1>{title}</h1>
-        <p>Hello, {user.name}! {description}</p>
+export function Home({ title, description, posts, tasks, user }: HomePageProps) {
+  return (
+    <div>
+      <h1>{title}</h1>
+      <p>Hello, {user.name}! {description}</p>
+      <ul>
+        {posts.map((post) => (
+          <li key={post.id}>{post.title}</li>
+        ))}
+      </ul>
+      {tasks ? (
         <ul>
-          {posts.map((post) => (
-            <li key={post.id}>{post.title}</li>
+          {tasks.map((task) => (
+            <li key={task.id}>{task.title}</li>
           ))}
         </ul>
-        {tasks ? (
-          <ul>
-            {tasks.map((task) => (
-              <li key={task.id}>{task.title}</li>
-            ))}
-          </ul>
-        ) : "Loading tasks..."}
-      </div>
-    );
-  }
-  ```
+      ) : (
+        'Loading tasks...'
+      )}
+    </div>
+  );
+}
+```
 
-  ```svelte svelte icon="/assets/icons/svelte.svg"
-  <script>
-    import type { HomePageParams } from '~/server/inertia';
+## Data-first definitions
 
-    /**
-     * interface Props {
-     *  title: string;
-     *  description: string;
-     *  posts: Posts[];
-     *  tasks?: Tasks[];
-     *  user: User
-     * }
-    */
-    let { title, posts, tasks, user } = $props<HomePageProps>();
-  </script>
+With the data-first API:
 
-  <div>
-    <h1>{title}</h1>
-    <p>Hello, {user.name}! {description}</p>
-    <ul>
-      {#each posts as post}
-        <li key={post.id}>{post.title}</li>
-      {/each}
-    </ul>
-    {#if tasks}
-      {#each tasks as task}
-        <li key={task.id}>{task.title}</li>
-      {/each}
-    {:else}
-      <p>Loading tasks...</p>
-    {/if}
-  </div>
-  ```
+- every key in `Data` is a prop by default
+- `modifiers` only describe exceptions such as deferred, optional, once, or merge behavior
+- render values can still be literals or lazy closures
+- nested object props can declare nested modifiers
 
-</CodeGroup>
+For the best `PageProps<typeof page>` inference, capture your modifier tree in a named constant and type it with `satisfies ModifierTree<Data>`.
 
-## Data & Props
-
-Page props builders - `prop`, `mergedProp`, `deepMergedProp` provide various chained methods 
-to help you customize your data loading behavior. 
-
-### Merging props
-
-Inertia overwrites props with the same name when reloading a page. However, you may need to merge new data with existing data instead. 
-For example, when implementing a “load more” button for paginated results.
-
-Prop merging only works during [partial](https://inertiajs.com/docs/v2/data-props/partial-reloads) reloads. Full page reloads
- will override the props with the new values.
+If a page has no special behavior, skip `modifiers` entirely.
 
 ```ts
-const page = definePage({
+const page = definePage<{
+  title: string;
+  message: string;
+}>({
   component: 'Home',
-  props: {
-    posts: mergedProp<Posts[]>(),
-  },
 });
 ```
 
-<Expandable title="Usage">
-```ts
-inertia.render(
-  page({
-    posts: () => [
-      { id: 1 },
-      { id: 2 },
-    ],
-  })
-);
+## Nested modifiers
 
-inertia.render(
-  page({
-    posts: () => [
-      { id: 3 },
-      { id: 4 },
-    ],
-  })
-);
-
-const finalPostsProp = [
-  { id: 1 },
-  { id: 2 },
-  { id: 3 },
-  { id: 4 },
-];
-```
-
-</Expandable>
-
-By default, new data will be appended to the end of the existing data. You can change this behavior by chaining the `prepend` method.
+Nested modifiers are declared as a sparse tree that matches your data shape.
 
 ```ts
-const page = definePage({
-  component: 'Home',
-  props: {
-    posts: mergedProp<{ id: number }[]>().prepend(),
-  },
-});
-```
+import { deferred, merged, type ModifierTree } from 'inertia-server';
 
-<Expandable title="Usage">
-```ts
-inertia.render(
-  page({
-    posts: () => [
-      { id: 1 },
-      { id: 2 },
-    ],
-  })
-);
-
-inertia.render(
-  page({
-    posts: () => [
-      { id: 3 },
-      { id: 4 },
-    ],
-  })
-);
-
-const finalPostsProp = [
-  { id: 3 },
-  { id: 4 },
-  { id: 1 },
-  { id: 2 },
-];
-```
-</Expandable>
-
-If you want to not only append, but replace some of the existing data, provide a `matchOn` option.
-By sending items with the same key, elements will be replaced, and rest - appended or prepended.
-
-```ts
-const page = definePage({
-  component: 'Home',
-  props: {
-    posts: mergedProp<{ id: number, value: string }[]>({ matchOn: "id" }),
-  },
-});
-```
-<Expandable title="Usage">
-```ts
-inertia.render(
-  page({
-    posts: () => [
-      { id: 1, value: 'foo' },
-      { id: 2, value: 'bar' },
-    ],
-  })
-);
-
-inertia.render(
-  page({
-    posts: () => [
-      { id: 1, value: 'baz' },
-      { id: 2, value: 'qux' },
-    ],
-  })
-);
-
-const finalPostsProp = [
-  { id: 1, value: 'baz' },
-  { id: 2, value: 'qux' },
-];
-```
-</Expandable>
-
-### Deep merging
-
-Instead of specifying which nested paths should be merged, you may use `deepMergedProp` to ensure a deep merge of the entire structure.
-
-```ts
-const page = definePage({
-  component: 'Chat',
-  props: {
-    chat: deepMergedProp<{ 
-      messages: { id: number; text: string }[], 
-      online: 12
-    }>({ matchOn: "meesges.id" }),
-  },
-});
-```
-<Expandable title="Usage">
-```ts
-inertia.render(
-  page({
-    chat: () => {
-      return { messages: [{ id: 1, text: 'Hello' }], online: 12 };
-    },
-  })
-);
-
-inertia.render(
-  page({
-    chat: () => {
-      return { messages: [{ id: 2, text: 'World' }], online: 13 };
-    },
-  })
-);
-
-const finalChatProp = {
-  messages: [
-    { id: 1, text: 'Hello' },
-    { id: 2, text: 'World' },
-  ],
-  online: 13,
+type DashboardPageData = {
+  title: string;
+  filters: {
+    search: string;
+    status: string;
+  };
+  analyticsPanel: {
+    analytics: {
+      summary: string;
+      chart: string[];
+    };
+  };
+  users: {
+    data: User[];
+  };
 };
+
+const dashboardPageModifiers = {
+  analyticsPanel: {
+    analytics: deferred('analytics'),
+  },
+  users: {
+    data: merged<User[]>({ matchOn: 'id' }).scroll({ pageName: 'page' }),
+  },
+} satisfies ModifierTree<DashboardPageData>;
+
+const dashboardPage = definePage<
+  DashboardPageData,
+  typeof dashboardPageModifiers
+>({
+  component: 'Dashboard',
+  modifiers: dashboardPageModifiers,
+});
 ```
-</Expandable>
+
+Render values stay data-first as well.
+
+```ts
+inertia.render(
+  dashboardPage({
+    title: 'Overview',
+    filters: {
+      search: 'Ada',
+      status: 'active',
+    },
+    analyticsPanel: {
+      analytics: async () => ({
+        summary: 'Engagement up 24%',
+        chart: ['Mon 12', 'Tue 18', 'Wed 24'],
+      }),
+    },
+    users: {
+      data: () => fetchUsers(),
+    },
+    $hasMore: {
+      'users.data': true,
+    },
+  })
+);
+```
+
+Internally, partial reloads and merge metadata use dot paths such as `analyticsPanel.analytics` and `users.data`.
 
 <Note>
-Deep merging was introduced before normal merging had support for prepending and targeting nested paths. In most cases, `mergedProp()` 
-with `matchOn` and its `append` and `prepend` methods should be sufficient.
+This iteration supports either child modifiers on a node or a modifier on the parent path, but not both at the same time.
 </Note>
 
-### Infinite scrolling
+## Lazy loading
 
-Merged props can be used to implement [infinite scrolling](https://inertiajs.com/docs/v2/data-props/infinite-scroll) with inertia `<InfiniteScroll>` component.
+When rendering a page, every value can be a literal or a lazy function.
 
 ```ts
-const page = definePage({
+const page = definePage<{
+  foo: string;
+  bar: string;
+}>({
   component: 'Home',
-  props: {
-    posts: mergedProp<Posts[]>().scroll(),
-  },
+});
+
+// Option 1
+inertia.render(
+  page({
+    foo: 'foo',
+    bar: () => getBar(),
+  })
+);
+
+// Option 2
+inertia.render(
+  page({
+    foo: () => 'foo',
+    bar: getBar(),
+  })
+);
+```
+
+In both cases, the value is resolved only when Inertia needs it, not when `render()` is called.
+
+## Deferred props
+
+Use `deferred()` to keep a prop out of the initial response and fetch it afterwards.
+
+```ts
+import { deferred, type ModifierTree } from 'inertia-server';
+
+type DeferredPageData = {
+  foo: string;
+  permissions: string[];
+  teams: string[];
+  roles: string[];
+};
+
+const deferredPageModifiers = {
+  permissions: deferred(),
+  teams: deferred('attributes'),
+  roles: deferred('attributes'),
+} satisfies ModifierTree<DeferredPageData>;
+
+const page = definePage<DeferredPageData, typeof deferredPageModifiers>({
+  component: 'Home',
+  modifiers: deferredPageModifiers,
 });
 ```
 
-In this case, inertia will try to read `page` query parameter from your request and use it as the page number. To customise it, you can use the `pageName` option.
+In the example above, `teams` and `roles` are fetched together, while `permissions` is fetched in parallel as a separate deferred group.
+
+## Merging props
+
+Inertia overwrites props with the same name when reloading a page. Use `merged()` when you want partial reloads to append or prepend incoming data instead.
 
 ```ts
-const page = definePage({
+import { merged, type ModifierTree } from 'inertia-server';
+
+type PostsPageData = {
+  posts: { id: number; value: string }[];
+};
+
+const postsPageModifiers = {
+  posts: merged<{ id: number; value: string }[]>({ matchOn: 'id' }).prepend(),
+} satisfies ModifierTree<PostsPageData>;
+
+const page = definePage<PostsPageData, typeof postsPageModifiers>({
   component: 'Home',
-  props: {
-    posts: mergedProp<Posts[]>().scroll({ pageName: 'page' }),
-  },
+  modifiers: postsPageModifiers,
 });
 ```
 
-When rendering a page, inertia will require you to provide the `hasMore` prop. It will be used to determine if there is more data to load.
+With `matchOn`, items with the same key are replaced and the rest are appended or prepended.
+
+## Deep merging
+
+Use `deepMerged()` to merge the entire nested structure.
 
 ```ts
-inertia.render(page({
-  posts: () => getPosts(page),
-  otherScrollProp: () => getOtherScrollProp(page),
-  $hasMore: {
-    posts: true,
-    otherScrollProp: true,
-  },
-}));
+import { deepMerged, type ModifierTree } from 'inertia-server';
+
+type ChatPageData = {
+  chat: {
+    messages: { id: number; text: string }[];
+    online: number;
+  };
+};
+
+const chatPageModifiers = {
+  chat: deepMerged({ matchOn: 'messages.id' }),
+} satisfies ModifierTree<ChatPageData>;
+
+const page = definePage<ChatPageData, typeof chatPageModifiers>({
+  component: 'Chat',
+  modifiers: chatPageModifiers,
+});
 ```
 
-To make backend integration easier, you can read the page parameter name from the page definition.
+<Note>
+`deepMerged()` is useful when the whole structure should merge together. In most cases, `merged()` with `matchOn`, `append`, or `prepend` is more explicit.
+</Note>
+
+## Infinite scrolling
+
+Use `merged().scroll()` to integrate with Inertia's infinite scroll behavior.
+
+```ts
+import { merged, type ModifierTree } from 'inertia-server';
+
+type PostsPageData = {
+  posts: Posts[];
+};
+
+const postsPageModifiers = {
+  posts: merged<Posts[]>().scroll({ pageName: 'page' }),
+} satisfies ModifierTree<PostsPageData>;
+
+const page = definePage<PostsPageData, typeof postsPageModifiers>({
+  component: 'Home',
+  modifiers: postsPageModifiers,
+});
+```
+
+When rendering a page, provide `$hasMore` for every scroll prop.
+
+```ts
+inertia.render(
+  page({
+    posts: () => getPosts(page),
+    $hasMore: {
+      posts: true,
+    },
+  })
+);
+```
+
+To make backend integration easier, read the page parameter name from the page definition.
+
 ```ts
 function handler(req: Request) {
   const pageQueryParam = postsPage.scrollOptions.posts.pageName;
@@ -343,102 +336,76 @@ function handler(req: Request) {
 }
 ```
 
-### Lazy loading
-When rendering a page, every `prop` value can be a literal, or a lazy evaluated function.
-It's up to you which data loading strategy to use. Let's see how it works on an example.
+Nested scroll props use dot paths in `$hasMore`.
 
 ```ts
-const page = definePage({
-  component: 'Home',
-  props: {
-    foo: prop<string>(),
-    bar: prop<string>().deferred(),
-  },
-})
-
-// Option 1
-inertia.render(page({
-  foo: 'foo',
-  bar: () => getBar(),
-}));
-
-// Option 2
-inertia.render(page({
-  foo: () => 'foo',
-  bar: getBar(),
-}));
+$hasMore: {
+  'users.data': true,
+}
 ```
 
-In both cases, the `foo` prop will be sent during every page request, but if you define
-its value as a function, it will be resolved when inertia needs to parse its value,
-not at the moment of the `render` call. It is especially useful when you work with partial
-data requests.
+## Prop modifiers
 
-Interestingly, the `bar` prop will not be parsed by inertia on the first request. By default
-you should provide a lazy evaluable function to defer execution of your code until it's needed.
-But if you want to, you can provide a literal value at the moment of the `render` call. It will
-not be sent to the client, but it may useful if you want to execute some side effect when a page
-is rendered and the prop prepared, no matter whether its loaded or not.
+Use these helpers to control how Inertia includes a prop:
 
-### Deferred props
-
-To defer a prop, you can use the `deferred()` method on the prop definition.
+- `optional()`: only include when explicitly requested via `only`
+- `always()`: always include, even on partial reloads
+- `once()`: include on the first request, then keep cached on the client
 
 ```ts
+import { always, once, optional, type ModifierTree } from 'inertia-server';
+
+type PropModifierPageData = {
+  foo: string;
+  bar: string;
+  baz: string;
+};
+
+const propModifierPageModifiers = {
+  foo: optional(),
+  bar: always(),
+  baz: once(),
+} satisfies ModifierTree<PropModifierPageData>;
+
+const page = definePage<PropModifierPageData, typeof propModifierPageModifiers>({
+  component: 'Home',
+  modifiers: propModifierPageModifiers,
+});
+```
+
+## Legacy schema API
+
+The older schema API still works and stays useful during migration.
+
+```ts
+import {
+  createInertia,
+  deepMergedProp,
+  mergedProp,
+  prop,
+} from 'inertia-server';
+
+const { definePage } = createInertia(...);
+
 const page = definePage({
   component: 'Home',
   props: {
-    foo: prop<string>().deferred(),
+    title: prop<string>(),
+    posts: mergedProp<Posts[]>(),
+    tasks: deepMergedProp<Tasks[]>().deferred(),
   },
 });
 ```
 
-By default, all deferred props get fetched in one request after the initial page is rendered, but you can choose to fetch data in parallel by grouping props together.
-
-```ts
-const page = definePage({
-  component: 'Home',
-  props: {
-    permissions: prop<string[]>().deferred(),
-    teams: prop<string[]>().deferred('attributes'),
-    roles: prop<string[]>().deferred('attributes'),
-  },
-});
-```
-
-In the example above, the `teams` and `roles` props will be fetched in one request, while the permissions prop will be fetched in a separate request in parallel. Group names are arbitrary strings and can be anything you choose.
-
-On the client side, inertia provides the `Deferred` component to handle deferred props. It is not required with `inertia-server`, because we correctly type deferred props as optional, so you can
-just check for the value and show a loading state. If you need to
-differentiate between the loading state and a potential empty value, use the component though.
-
-### Prop modifiers
-
-When Inertia performs a request, it will determine which data is required and only then will it evaluate the closure. With prop modifiers, you can manually control this behavior.
-
-Use `optional()` method to specify that a prop should never be included unless explicitly requested using the `only` client option.
-
-On the reverse, you can use `always()` method to specify that a prop should always be included, even in partial reloads.
-
-To load a prop on the first request, and then to keep it in the cache, you can use `once()` method.
-
-```ts
-const page = definePage({
-  component: 'Home',
-  props: {
-    foo: prop<string>().optional(),
-    bar: prop<string>().always(),
-    baz: prop<string>().once(),
-  },
-});
-```
+Prefer the data-first `definePage<Data>({ modifiers })` API for new code. Keep the schema API when you need a backwards-compatible migration path.
 
 ## Accessing other page object properties
 
-Flash data and errors are available inside the props object. To access page url, version and other metadata, use hooks from your framework of choice.
+Flash data and errors are available inside the props object. To access page URL, version, and other metadata, use hooks from your framework of choice.
 
 ```tsx react icon="react"
 import { usePage } from '@inertiajs/react';
+
 const { url, version } = usePage();
 
 return (

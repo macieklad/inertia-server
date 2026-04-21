@@ -1,4 +1,10 @@
-import { alwaysPage, deferredPage, oncePage, optionalPage } from "../inertia";
+import {
+	alwaysPage,
+	deferredPage,
+	nestedPropsPage,
+	oncePage,
+	optionalPage,
+} from "../inertia";
 import { router } from "../router";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -55,6 +61,37 @@ export const propsRoutes = router
 					permissions: ["read", "write", "delete"],
 					lastChecked: new Date().toLocaleTimeString(),
 				}),
+			}),
+		);
+	})
+	.get("/nested-props", ({ inertia }) => {
+		return inertia.render(
+			nestedPropsPage({
+				title: "Nested Props Demo",
+				identity: {
+					name: "Ada Lovelace",
+					email: "ada@example.com",
+					team: "Protocol",
+				},
+				analyticsPanel: {
+					analytics: async () => {
+						await sleep(900);
+						return {
+							summary: "Engagement up 24% this week",
+							chart: ["Mon 12", "Tue 18", "Wed 24"],
+						};
+					},
+				},
+				sidebar: {
+					stats: async () => {
+						await sleep(700);
+						return { unread: 3 };
+					},
+					notes: async () => {
+						await sleep(700);
+						return ["Review the protocol diff", "Ship regression tests"];
+					},
+				},
 			}),
 		);
 	});

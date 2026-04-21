@@ -20,8 +20,8 @@ const {} = createInertia({
 If you want to enable or disable [history encryption](https://inertiajs.com/docs/v2/security/history-encryption), you can:
 
 - define global `encryptHistory` when setting up inertia
-- provide `encryptHistory` option your page definition
-- add options to the `render` function of your page
+- call `encryptHistory()` on the helper for the current request
+- add `encryptHistory` option when invoking your page definition
 
 Those values are merged in a top-to-bottom order. The last one wins.
 
@@ -30,13 +30,18 @@ const {} = createInertia({
   encryptHistory: true,
 });
 
-const page = definePage({
-  encryptHistory: true,
-});
+inertia.encryptHistory();
 
-inertia.render(page, {
-  encryptHistory: true,
-});
+inertia.render(
+  page(
+    {
+      title: 'Welcome',
+    },
+    {
+      encryptHistory: true,
+    }
+  )
+);
 ```
 
 ## Clearing history

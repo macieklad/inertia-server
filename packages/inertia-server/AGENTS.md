@@ -43,3 +43,8 @@ Scope: `packages/inertia-server` only.
 - Avoid broad refactors outside package scope
 - No destructive git/file commands unless explicitly requested
 - Prefer small, reviewable edits
+
+## Inertia Docs
+
+- For Inertia compatibility or migration work, consult v2 and v3 docs separately
+- Do not infer v2 behavior from v3 docs, or v3 behavior from v2 docs

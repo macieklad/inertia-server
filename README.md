@@ -34,19 +34,30 @@ Inertia protocol, while quite simple, requires you to write a lot of boilerplate
 ### Example
 
 ```ts
-import { createInertia, prop, PageProps } from 'inertia-server';
+import {
+  createInertia,
+  deferred,
+  type ModifierTree,
+  type PageProps,
+} from 'inertia-server';
 
 const { definePage, createHelper } = createInertia({
   version: '1.0.0',
   render: (page) => renderToString(<Root page={page} />),
 });
 
-const homePage = definePage({
+type HomePageData = {
+  title: string;
+  description: string;
+};
+
+const homePageModifiers = {
+  description: deferred(),
+} satisfies ModifierTree<HomePageData>;
+
+const homePage = definePage<HomePageData, typeof homePageModifiers>({
   component: 'Home',
-  props: {
-    title: prop<string>(),
-    description: prop<string>().deferred(),
-  },
+  modifiers: homePageModifiers,
 });
 
 export type HomePageProps = PageProps<typeof homePage>;
@@ -68,6 +79,8 @@ export function Page({ title, description }: HomePageProps) {
   </>;
 }
 ```
+
+`definePage({ props: { ... } })` with `prop()`, `mergedProp()`, and `deepMergedProp()` is still supported for backward compatibility. The `Data + modifiers` shape above is the recommended API for new pages.
 
 ## Contributing
 

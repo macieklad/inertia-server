@@ -34,24 +34,32 @@ Core responsibilities:
 - Build protocol metadata (`deferredProps`, `onceProps`, merge/scroll metadata)
 - Emit proper response type (HTML vs JSON vs redirect/location/version conflict)
 
-### 2) Builder DSL (`src/builders.ts`)
+### 2) Page definition DSL (`src/builders.ts`, `src/types.ts`)
 
-Type-safe property builders encode metadata on symbols:
+Two public shapes are supported:
+
+- data-first pages:
+  - `definePage<Data>({ component })`
+  - `definePage<Data, typeof modifiers>({ component, modifiers })`
+- legacy schema pages:
+  - `definePage({ component, props: { ... } })`
+
+Standalone modifier helpers:
+
+- `once(opts?)`
+- `deferred(group?)`
+- `optional()`
+- `always()`
+- `merged<T>(opts?)`
+- `deepMerged<T>(opts?)`
+
+Legacy builder helpers remain available for compatibility:
 
 - `prop<T>()`
 - `mergedProp<T>(opts?)`
 - `deepMergedProp<T>(opts?)`
 
-Supported modifiers:
-
-- `.once({ expiresAt? })`
-- `.deferred(group?)`
-- `.optional()`
-- `.always()`
-- `.append()` / `.prepend()`
-- `.scroll({ pageName? })`
-
-Builder state is consumed by core page resolution and metadata generation.
+Modifier and builder state is consumed by core page resolution and metadata generation.
 
 ### 3) Protocol utilities
 

@@ -24,6 +24,7 @@ const navGroups = [
 			{ href: "/once-props", label: "Once" },
 			{ href: "/optional-props", label: "Optional" },
 			{ href: "/always-props", label: "Always" },
+			{ href: "/nested-props", label: "Nested" },
 			{ href: "/flash", label: "Flash" },
 		],
 	},

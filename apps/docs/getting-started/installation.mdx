@@ -130,7 +130,9 @@ app
     }))
   )
   .get("/", ({ inertia }) => {
-    return inertia.render(homePage({ title: "Hello" }));
+    return inertia.render(
+      homePage({ title: "Hello", message: "Hello from Elysia" })
+    );
   });
 ```
 
@@ -144,7 +146,9 @@ const app = new Hono();
 app.use("*", honoAdapter(createHelper));
 
 app.get("/", (c) => {
-  return c.get("inertia").render(homePage({ title: "Hello" }));
+  return c
+    .get("inertia")
+    .render(homePage({ title: "Hello", message: "Hello from Hono" }));
 });
 ```
 
@@ -160,15 +164,14 @@ we have a dedicated [bundling](/integrations/bundling) integration section in th
 Define your props on the server:
 
 ```tsx ~/server/inertia.ts
-import { prop, type PageProps } from "inertia-server";
+import type { PageProps } from "inertia-server";
 import { definePage } from "./inertia";
 
-export const homePage = definePage({
+export const homePage = definePage<{
+  title: string;
+  message: string;
+}>({
   component: "Home",
-  props: {
-    title: prop<string>(),
-    message: prop<string>(),
-  },
 });
 
 export type HomePageProps = PageProps<typeof homePage>;
@@ -180,7 +183,12 @@ Render your page on the server:
 import { homePage } from "./inertia";
 
 app.get("/", ({ inertia }) => {
-  return inertia.render(homePage({ title: "Hello" }));
+  return inertia.render(
+    homePage({
+      title: "Hello",
+      message: "Rendered on the server",
+    })
+  );
 });
 ```
 
@@ -203,4 +211,3 @@ export default function Home({ title, message }: HomePageProps) {
 
 Congratulations on setting up inertia! Now you can start building your application.
 It's time to learn some concepts and integrations.
-

@@ -28,22 +28,36 @@ provide type safety between the client and server code.
 
 <Note>Working with pages is covered in detail in the [pages](/basics/pages) section.</Note>
 ```typescript
-import { prop } from 'inertia-server';
+import { deferred, type ModifierTree } from 'inertia-server';
 import { definePage } from '~/server/inertia';
 
-const homePage = definePage({
+type HomePageData = {
+  title: string;
+  stats: {
+    visits: number;
+  };
+};
+
+const homePageModifiers = {
+  stats: deferred(),
+} satisfies ModifierTree<HomePageData>;
+
+const homePage = definePage<HomePageData, typeof homePageModifiers>({
   component: 'Home',
-  props: {
-    title: prop<string>(),
-  },
+  modifiers: homePageModifiers,
 });
 
 const requestPage = homePage({
   title: 'Welcome',
+  stats: () => ({ visits: 42 }),
 });
 
-const response = await inertia.render(page);
+const response = await inertia.render(requestPage);
 ```
+
+<Note>
+If your page does not need special loading or merge behavior, you can skip `modifiers` entirely and define it as `definePage<HomePageData>({ component: 'Home' })`. The legacy `props` schema API also still works.
+</Note>
 
 
 ## Redirects
@@ -95,7 +109,7 @@ declare module "@inertiajs/core" {
 }
 ```
 
-Now you will get type hints when using the `share` function. Every page props will have access `user` and `appName` keys.
+Now you will get type hints when using the `share` function. Every page props will have access to `auth` and `appName` keys.
 
 <Note>Shared keys will be marked as optional, so in addition to their base type they will get a `undefined` added to it.</Note>
 
@@ -103,8 +117,11 @@ If you want to make sure that a share key is available to a page, you can use th
 Then it won't be optional in the generated page prop types. Also, a server error will be thrown if the key was not provided.
 
 ```ts
-const page = definePage({
-  requireShared: ['user'],
+const page = definePage<{
+  title: string;
+}>({
+  component: 'Home',
+  requireShared: ['auth'],
 });
 ```
 

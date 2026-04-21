@@ -107,4 +107,36 @@ test.describe("Suite 8: Partial Reloads", () => {
 			await expect(page.getByText("Post #11:")).toBeVisible();
 		});
 	});
+
+	test.describe("8.3 Nested Partial Reloads", () => {
+		test("nested child and parent-deferred paths load independently", async ({
+			page,
+		}) => {
+			await page.goto("/nested-props");
+
+			await expect(page.getByTestId("nested-name")).toHaveText("Ada Lovelace");
+			await expect(page.getByTestId("nested-email")).toHaveText(
+				"ada@example.com",
+			);
+			await expect(page.getByTestId("analytics-placeholder")).toBeVisible();
+			await expect(page.getByTestId("sidebar-placeholder")).toBeVisible();
+
+			await page.getByRole("button", { name: "Load Analytics" }).click();
+
+			await expect(page.getByTestId("analytics-summary")).toHaveText(
+				"Engagement up 24% this week",
+				{ timeout: 5000 },
+			);
+			await expect(page.getByTestId("nested-team")).toHaveText("Protocol");
+			await expect(page.getByTestId("sidebar-placeholder")).toBeVisible();
+
+			await page.getByRole("button", { name: "Load Sidebar Stats" }).click();
+
+			await expect(page.getByTestId("sidebar-unread")).toHaveText(
+				"Unread items: 3",
+				{ timeout: 5000 },
+			);
+			await expect(page.getByTestId("sidebar-notes-missing")).toBeVisible();
+		});
+	});
 });

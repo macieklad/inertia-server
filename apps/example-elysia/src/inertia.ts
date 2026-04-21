@@ -1,8 +1,12 @@
 import {
+	always,
 	createInertia,
-	deepMergedProp,
-	mergedProp,
-	prop,
+	deepMerged,
+	deferred,
+	type ModifierTree,
+	merged,
+	once,
+	optional,
 } from "inertia-server";
 import { loadManifest } from "./manifest";
 import { renderToHtml } from "./ui/index";
@@ -39,19 +43,17 @@ export const { definePage, createHelper } = createInertia({
 	render: (page) => renderToHtml(page, manifest),
 });
 
-export const homePage = definePage({
+export const homePage = definePage<{
+	title: string;
+	description: string;
+}>({
 	component: "Home",
-	props: {
-		title: prop<string>(),
-		description: prop<string>(),
-	},
 });
 
-export const flashPage = definePage({
+export const flashPage = definePage<{
+	title: string;
+}>({
 	component: "Flash",
-	props: {
-		title: prop<string>(),
-	},
 });
 
 export type User = {
@@ -62,74 +64,104 @@ export type User = {
 	createdAt: string;
 };
 
-export const usersIndexPage = definePage({
+export const usersIndexPage = definePage<{
+	title: string;
+	users: User[];
+	search: string;
+	page: number;
+	totalPages: number;
+}>({
 	component: "Users/Index",
-	props: {
-		title: prop<string>(),
-		users: prop<User[]>(),
-		search: prop<string>(),
-		page: prop<number>(),
-		totalPages: prop<number>(),
-	},
 });
 
-export const usersCreatePage = definePage({
+export const usersCreatePage = definePage<{
+	title: string;
+}>({
 	component: "Users/Create",
-	props: {
-		title: prop<string>(),
-	},
 });
 
-export const usersEditPage = definePage({
+export const usersEditPage = definePage<{
+	title: string;
+	user: User;
+}>({
 	component: "Users/Edit",
-	props: {
-		title: prop<string>(),
-		user: prop<User>(),
-	},
 });
 
-export const deferredPage = definePage({
+type DeferredPageData = {
+	title: string;
+	quickData: string;
+	slowData: string;
+	sidebarData: string[];
+};
+
+const deferredPageModifiers = {
+	slowData: deferred(),
+	sidebarData: deferred("sidebar"),
+} satisfies ModifierTree<DeferredPageData>;
+
+export const deferredPage = definePage<
+	DeferredPageData,
+	typeof deferredPageModifiers
+>({
 	component: "DeferredDemo",
-	props: {
-		title: prop<string>(),
-		quickData: prop<string>(),
-		slowData: prop<string>().deferred(),
-		sidebarData: prop<string[]>().deferred("sidebar"),
-	},
+	modifiers: deferredPageModifiers,
 });
 
-export const oncePage = definePage({
+type OncePageData = {
+	title: string;
+	timestamp: number;
+	config: { theme: string; locale: string };
+	plans: { id: number; name: string; price: number }[];
+};
+
+const oncePageModifiers = {
+	config: once(),
+	plans: once({ expiresAt: Date.now() + 60000 }),
+} satisfies ModifierTree<OncePageData>;
+
+export const oncePage = definePage<OncePageData, typeof oncePageModifiers>({
 	component: "OncePropsDemo",
-	props: {
-		title: prop<string>(),
-		timestamp: prop<number>(),
-		config: prop<{ theme: string; locale: string }>().once(),
-		plans: prop<{ id: number; name: string; price: number }[]>().once({
-			expiresAt: Date.now() + 60000,
-		}),
-	},
+	modifiers: oncePageModifiers,
 });
 
-export const optionalPage = definePage({
+type OptionalPageData = {
+	title: string;
+	basicData: string;
+	heavyData: { items: string[] };
+};
+
+const optionalPageModifiers = {
+	heavyData: optional(),
+} satisfies ModifierTree<OptionalPageData>;
+
+export const optionalPage = definePage<
+	OptionalPageData,
+	typeof optionalPageModifiers
+>({
 	component: "OptionalPropsDemo",
-	props: {
-		title: prop<string>(),
-		basicData: prop<string>(),
-		heavyData: prop<{ items: string[] }>().optional(),
-	},
+	modifiers: optionalPageModifiers,
 });
 
-export const alwaysPage = definePage({
+type AlwaysPageData = {
+	title: string;
+	regularData: string;
+	authData: {
+		isAuthenticated: boolean;
+		permissions: string[];
+		lastChecked: string;
+	};
+};
+
+const alwaysPageModifiers = {
+	authData: always(),
+} satisfies ModifierTree<AlwaysPageData>;
+
+export const alwaysPage = definePage<
+	AlwaysPageData,
+	typeof alwaysPageModifiers
+>({
 	component: "AlwaysPropsDemo",
-	props: {
-		title: prop<string>(),
-		regularData: prop<string>(),
-		authData: prop<{
-			isAuthenticated: boolean;
-			permissions: string[];
-			lastChecked: string;
-		}>().always(),
-	},
+	modifiers: alwaysPageModifiers,
 });
 
 export type Post = {
@@ -140,12 +172,18 @@ export type Post = {
 	createdAt: string;
 };
 
-export const postsPage = definePage({
+type PostsPageData = {
+	title: string;
+	posts: Post[];
+};
+
+const postsPageModifiers = {
+	posts: merged<Post[]>({ matchOn: "id" }).scroll({ pageName: "page" }),
+} satisfies ModifierTree<PostsPageData>;
+
+export const postsPage = definePage<PostsPageData, typeof postsPageModifiers>({
 	component: "Posts",
-	props: {
-		title: prop<string>(),
-		posts: mergedProp<Post[]>({ matchOn: "id" }).scroll({ pageName: "page" }),
-	},
+	modifiers: postsPageModifiers,
 });
 
 export type Notification = {
@@ -155,12 +193,21 @@ export type Notification = {
 	createdAt: string;
 };
 
-export const notificationsPage = definePage({
+type NotificationsPageData = {
+	title: string;
+	notifications: Notification[];
+};
+
+const notificationsPageModifiers = {
+	notifications: merged<Notification[]>({ matchOn: "id" }).prepend(),
+} satisfies ModifierTree<NotificationsPageData>;
+
+export const notificationsPage = definePage<
+	NotificationsPageData,
+	typeof notificationsPageModifiers
+>({
 	component: "Notifications",
-	props: {
-		title: prop<string>(),
-		notifications: mergedProp<Notification[]>({ matchOn: "id" }).prepend(),
-	},
+	modifiers: notificationsPageModifiers,
 });
 
 export type Conversation = {
@@ -171,40 +218,81 @@ export type Conversation = {
 	lastActivity: string;
 };
 
-export const conversationsPage = definePage({
+type ConversationsPageData = {
+	title: string;
+	conversations: Conversation[];
+};
+
+const conversationsPageModifiers = {
+	conversations: deepMerged<Conversation[]>({ matchOn: "id" }),
+} satisfies ModifierTree<ConversationsPageData>;
+
+export const conversationsPage = definePage<
+	ConversationsPageData,
+	typeof conversationsPageModifiers
+>({
 	component: "Conversations",
-	props: {
-		title: prop<string>(),
-		conversations: deepMergedProp<Conversation[]>({ matchOn: "id" }),
-	},
+	modifiers: conversationsPageModifiers,
 });
 
-export const historyStartPage = definePage({
+type NestedPropsPageData = {
+	title: string;
+	identity: {
+		name: string;
+		email: string;
+		team: string;
+	};
+	analyticsPanel: {
+		analytics: {
+			summary: string;
+			chart: string[];
+		};
+	};
+	sidebar: {
+		stats: {
+			unread: number;
+		};
+		notes: string[];
+	};
+};
+
+const nestedPropsPageModifiers = {
+	analyticsPanel: {
+		analytics: deferred(),
+	},
+	sidebar: deferred(),
+} satisfies ModifierTree<NestedPropsPageData>;
+
+export const nestedPropsPage = definePage<
+	NestedPropsPageData,
+	typeof nestedPropsPageModifiers
+>({
+	component: "NestedPropsDemo",
+	modifiers: nestedPropsPageModifiers,
+});
+
+export const historyStartPage = definePage<{
+	title: string;
+}>({
 	component: "History/Start",
-	props: {
-		title: prop<string>(),
-	},
 });
 
-export const historyFormPage = definePage({
+export const historyFormPage = definePage<{
+	title: string;
+}>({
 	component: "History/Form",
-	props: {
-		title: prop<string>(),
-	},
 });
 
-export const historyResultPage = definePage({
+export const historyResultPage = definePage<{
+	title: string;
+	userName: string;
+	message: string;
+}>({
 	component: "History/Result",
-	props: {
-		title: prop<string>(),
-		userName: prop<string>(),
-		message: prop<string>(),
-	},
 });
 
-export const errorBagsPage = definePage({
+export const errorBagsPage = definePage<{
+	title: string;
+}>({
 	component: "ErrorBagsDemo",
-	props: {
-		title: prop<string>(),
-	},
 });
